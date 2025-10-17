@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -22,6 +23,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const finalTranscriptRef = useRef<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,15 +38,14 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
 
     recognition.onresult = (event) => {
       let interimTranscript = '';
-      let finalTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          finalTranscriptRef.current += event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      setContent(content + finalTranscript + interimTranscript);
+      setContent(finalTranscriptRef.current + interimTranscript);
     };
 
     recognition.onerror = (event) => {
@@ -68,7 +69,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     return () => {
       recognition.stop();
     };
-  }, [toast, content]);
+  }, [toast]);
 
 
   const handleToggleRecording = async () => {
@@ -87,6 +88,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
        try {
         // Request microphone permission
         await navigator.mediaDevices.getUserMedia({ audio: true });
+        finalTranscriptRef.current = content; // Start with current text
         recognitionRef.current?.start();
         setIsRecording(true);
       } catch (error) {
@@ -109,6 +111,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     if (content.trim()) {
       onSendMessage(content);
       setContent('');
+      finalTranscriptRef.current = '';
     }
   };
 
