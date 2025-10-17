@@ -76,10 +76,12 @@ export default function AuthPage() {
         title = "Invalid Email";
         description = "Please enter a valid email address.";
         break;
+      case "auth/user-not-found":
       case AuthErrorCodes.USER_DELETED:
         title = "Account Not Found";
         description = "No account found with this email address.";
         break;
+      case "auth/wrong-password":
       case AuthErrorCodes.INVALID_PASSWORD:
         title = "Incorrect Password";
         description = "The password you entered is incorrect. Please try again.";
@@ -239,5 +241,3 @@ export default function AuthPage() {
     </Tabs>
   );
 }
-
-    
