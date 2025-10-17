@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,12 +30,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore } from "@/firebase";
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   AuthErrorCodes
 } from "firebase/auth";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -49,6 +51,7 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -124,7 +127,18 @@ export default function AuthPage() {
   const handleSignUp = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const newUser = userCredential.user;
+
+      // Create a user document in Firestore
+      await setDoc(doc(firestore, "users", newUser.uid), {
+        email: newUser.email,
+        tier: "FREE",
+        createdAt: serverTimestamp(),
+        conversationsToday: 0,
+        streak: 0,
+      });
+
       toast({
         title: "Sign Up Successful",
         description: "Your account has been created.",

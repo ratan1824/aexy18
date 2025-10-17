@@ -1,25 +1,37 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ScenarioGrid } from '@/components/dashboard/scenario-grid';
 import { scenarios } from '@/lib/data';
-import { useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { User } from '@/lib/types';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc } from 'firebase/firestore';
 
 export default function DashboardPage() {
-  const { user, isUserLoading } = useUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: appUser, isLoading: isUserDocLoading } = useDoc<User>(userDocRef);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isAuthLoading && !authUser) {
       router.replace('/auth');
     }
-  }, [user, isUserLoading, router]);
+  }, [authUser, isAuthLoading, router]);
 
-  if (isUserLoading || !user) {
+  const isLoading = isAuthLoading || isUserDocLoading;
+
+  if (isLoading || !appUser) {
     return (
       <div className="min-h-screen bg-background">
         <main className="container mx-auto px-4 py-8">
@@ -45,16 +57,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Once the user is loaded, create a User object for the components.
-  // In the future, this will be fetched from Firestore.
-  const appUser: User = {
-    id: user.uid,
-    email: user.email || 'anonymous',
-    tier: 'FREE', // Default to FREE for now
-    conversationsToday: 0, // Default to 0
-    streak: 0, // Default to 0
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
@@ -67,5 +69,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

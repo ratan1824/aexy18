@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -17,7 +18,8 @@
         },
         "tier": {
           "type": "string",
-          "description": "Subscription tier of the user (FREE, STANDARD, PREMIUM)."
+          "description": "Subscription tier of the user (FREE, STANDARD, PREMIUM).",
+          "enum": ["FREE", "STANDARD", "PREMIUM"]
         },
         "createdAt": {
           "type": "string",
@@ -343,4 +345,3 @@
     "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, while adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved by avoiding `get()` calls in security rules. This is primarily accomplished through structural segregation (homogeneous security posture), and where required, denormalization.\n\nSpecifically:\n\n*   **Users Collection:** The `/users/{userId}` collection stores user profiles. This collection is secured using path-based rules, ensuring only the authenticated user (`request.auth.uid`) can read/write their own document. The `userId` parameter ensures that users can only access their own data.\n*   **Daily Usage Collection:** The `/users/{userId}/daily_usage/{dailyUsageId}` subcollection tracks daily conversation usage for each user. It leverages path-based rules to ensure that only the authenticated user can read/write their own usage data. This continues the hierarchical path structure for user-owned data.\n*   **Subscriptions Collection:** The `/users/{userId}/subscriptions/{subscriptionId}` subcollection stores subscription information for each user. Similar to the daily usage data, it relies on path-based ownership to ensure data privacy and security.\n*   **Conversations Collection:** The `/users/{userId}/conversations/{conversationId}` subcollection stores conversation data for each user. This enforces a clear ownership model. A user can only access conversations associated with their `userId`.\n*   **Messages Collection:** The `/users/{userId}/conversations/{conversationId}/messages/{messageId}` subcollection stores messages within each conversation. The path clearly represents the hierarchical relationship between users, conversations, and messages, making security rules straightforward.\n*   **Scenarios Collection:** The `/scenarios/{scenarioId}` collection stores information about the conversation scenarios. This collection is designed to be publicly readable, so no user-specific authorization is needed for reading scenario data. However, write access would be restricted to authorized admins (if such functionality is needed).\n\nThe structure avoids the need for complex `get()` calls in security rules by ensuring that all necessary authorization information is available within the document path itself or within the document data (if using membership maps, although this is not used in the current design since every document is owned by one user). This enhances security and makes the rules easier to understand and maintain.\n\nThe segregation of data into user-specific subcollections allows for simple and robust security rules based on `request.auth.uid`. This design supports the required QAPs by ensuring secure `list` operations within each user's data, as rules can be applied to entire collections or subcollections based on path-based ownership."
   }
 }
-    
