@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ScenarioGrid } from '@/components/dashboard/scenario-grid';
-import { scenarios, getMockUser } from '@/lib/data';
+import { scenarios, getMockUserByTier } from '@/lib/data';
 import { useUser } from '@/firebase';
 import type { User as AppUser } from '@/lib/types';
 import { useEffect, useState } from 'react';
@@ -20,7 +20,7 @@ export default function DashboardPage() {
       if (authUser) {
         // In a real app, you'd fetch this from Firestore.
         // For now, we'll use a mock user.
-        setUserProfile(getMockUser());
+        setUserProfile(getMockUserByTier('FREE'));
       } else {
         router.replace('/auth');
       }
@@ -28,9 +28,7 @@ export default function DashboardPage() {
   }, [authUser, isUserLoading, router]);
 
   const handleTierChange = (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => {
-    if (userProfile) {
-      setUserProfile({ ...userProfile, tier: newTier });
-    }
+    setUserProfile(getMockUserByTier(newTier));
   };
   
   const isLoading = isUserLoading || !userProfile;

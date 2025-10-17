@@ -1,33 +1,33 @@
 {
   "placeholderImages": [
     {
-      "id": "job-interview",
-      "description": "A professional setting for a job interview.",
-      "imageUrl": "https://picsum.photos/seed/job-interview/600/400",
-      "imageHint": "job interview"
+      "id": "job-interview-office",
+      "description": "A modern, well-lit office setting suitable for a job interview.",
+      "imageUrl": "https://images.unsplash.com/photo-1698047681469-8e0c19e80a66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvZmZpY2UlMjBpbnRlcnZpZXd8ZW58MHx8fHwxNzYwNzM0MTQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office interview"
     },
     {
-      "id": "restaurant-ordering",
-      "description": "A cozy restaurant scene.",
-      "imageUrl": "https://picsum.photos/seed/restaurant/600/400",
-      "imageHint": "restaurant ordering"
+      "id": "ordering-food-cafe",
+      "description": "A person ordering food at a bright and friendly cafe counter.",
+      "imageUrl": "https://images.unsplash.com/photo-1626041041459-adaf94681156?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjYWZlJTIwY291bnRlcnxlbnwwfHx8fDE3NjA3MzQxNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cafe counter"
     },
     {
-      "id": "business-negotiation",
-      "description": "A modern office where a business negotiation takes place.",
-      "imageUrl": "https://picsum.photos/seed/business/600/400",
-      "imageHint": "business negotiation"
+      "id": "negotiating-deal-boardroom",
+      "description": "Professionals around a large table in a corporate boardroom negotiating.",
+      "imageUrl": "https://images.unsplash.com/photo-1573166364839-1bfe9196c23e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxib2FyZHJvb20lMjBtZWV0aW5nfGVufDB8fHx8MTc2MDczNDE0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "boardroom meeting"
     },
     {
       "id": "user-avatar",
       "description": "Avatar for the user.",
-      "imageUrl": "https://picsum.photos/seed/user-avatar/100/100",
+      "imageUrl": "https://images.unsplash.com/photo-1535643302794-19c3804b874b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjA3MzA4MTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person portrait"
     },
     {
       "id": "ai-avatar",
       "description": "Avatar for the AI.",
-      "imageUrl": "https://picsum.photos/seed/ai-avatar/100/100",
+      "imageUrl": "https://images.unsplash.com/photo-1683322001857-f4d932a40672?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxyb2JvdCUyMGZhY2V8ZW58MHx8fHwxNzYwNzM0MTQ2fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "robot face"
     }
   ]

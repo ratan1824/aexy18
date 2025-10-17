@@ -9,30 +9,31 @@ const findImage = (id: string) => {
   return { src: image.imageUrl, hint: image.imageHint };
 }
 
-export const mockUsers: User[] = [
-  {
+export const mockUsers: { [key in User['tier']]: User } = {
+  FREE: {
     id: '1',
     email: 'free@test.com',
     tier: 'FREE',
     conversationsToday: 2,
     streak: 5
   },
-  {
+  STANDARD: {
     id: '2',
+    email: 'standard@test.com',
+    tier: 'STANDARD',
+    conversationsToday: 10,
+    streak: 25
+  },
+  PREMIUM: {
+    id: '3',
     email: 'premium@test.com',
     tier: 'PREMIUM',
     conversationsToday: 50,
     streak: 100
   }
-];
+};
 
-export const getMockUser = (): User => ({
-    id: '1',
-    email: 'free@test.com',
-    tier: 'FREE',
-    conversationsToday: 2,
-    streak: 5
-});
+export const getMockUserByTier = (tier: User['tier']): User => mockUsers[tier];
 
 
 export const scenarios: Scenario[] = [
@@ -43,7 +44,7 @@ export const scenarios: Scenario[] = [
     duration: '10 min',
     isPremium: false,
     initialPrompt: "Hi! I'm your interviewer today. Please introduce yourself.",
-    image: findImage('job-interview')
+    image: findImage('job-interview-office')
   },
   {
     id: 2,
@@ -52,7 +53,7 @@ export const scenarios: Scenario[] = [
     duration: '5 min',
     isPremium: false,
     initialPrompt: 'Welcome! What would you like to order?',
-    image: findImage('restaurant-ordering')
+    image: findImage('ordering-food-cafe')
   },
   {
     id: 3,
@@ -61,7 +62,7 @@ export const scenarios: Scenario[] = [
     duration: '15 min',
     isPremium: true,
     initialPrompt: "Let's discuss the terms of our partnership.",
-    image: findImage('business-negotiation')
+    image: findImage('negotiating-deal-boardroom')
   }
 ];
 
