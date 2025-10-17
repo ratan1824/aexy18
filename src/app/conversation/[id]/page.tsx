@@ -76,7 +76,7 @@ const ConversationPage: NextPage = () => {
           id: String(Date.now() + 1),
           role: 'ai',
           content: result.aiResponse,
-          timestamp: new D<ctrl61>ate().toISOString(),
+          timestamp: new Date().toISOString(),
           feedback: result.feedback,
           avatar: aiAvatar,
         };
