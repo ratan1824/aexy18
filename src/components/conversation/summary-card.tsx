@@ -6,16 +6,18 @@ import { Award, BarChart, Mic, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
-// Mock data, in a real app this would be calculated.
-const summary = {
-    totalMessages: 12,
-    duration: 480, // seconds
+export interface SummaryProps {
+    totalMessages: number;
+    duration: number; // in seconds
     scores: {
-      fluency: 85,
-      grammar: 92,
-      pronunciation: 88,
-      vocabulary: 90
+      fluency: number;
+      grammar: number;
+      pronunciation: number;
     }
+}
+
+interface ConversationSummaryProps {
+    summary: SummaryProps;
 }
 
 const ScoreItem = ({ icon, label, score }: { icon: React.ReactNode, label: string, score: number }) => (
@@ -31,7 +33,7 @@ const ScoreItem = ({ icon, label, score }: { icon: React.ReactNode, label: strin
     </div>
 );
 
-export function ConversationSummary() {
+export function ConversationSummary({ summary }: ConversationSummaryProps) {
     return (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in-0">
             <Card className="w-full max-w-md animate-in zoom-in-95">
