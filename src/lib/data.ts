@@ -68,6 +68,4 @@ export const tiers: Tiers = {
   }
 };
 
-export const getMockUser = (userId: string = '1'): User => mockUsers.find(u => u.id === userId)!;
-
 export const getScenario = (scenarioId: number): Scenario | undefined => scenarios.find(s => s.id === scenarioId);

@@ -4,32 +4,26 @@
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ScenarioGrid } from '@/components/dashboard/scenario-grid';
-import { scenarios } from '@/lib/data';
-import { useUser, useDoc, useFirestore } from '@/firebase';
+import { scenarios, mockUsers } from '@/lib/data';
+import { useUser } from '@/firebase';
 import type { User } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc } from 'firebase/firestore';
 
 export default function DashboardPage() {
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemo(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: appUser, isLoading: isUserDocLoading } = useDoc<User>(userDocRef);
 
   useEffect(() => {
     if (!isAuthLoading && !authUser) {
       router.replace('/auth');
     }
   }, [authUser, isAuthLoading, router]);
+  
+  // For now, we will use mock user data to ensure the page loads.
+  const appUser: User | undefined = mockUsers.find(u => u.tier === 'PREMIUM');
 
-  const isLoading = isAuthLoading || isUserDocLoading;
+  const isLoading = isAuthLoading;
 
   if (isLoading || !appUser) {
     return (
