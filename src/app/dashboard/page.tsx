@@ -4,28 +4,41 @@
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ScenarioGrid } from '@/components/dashboard/scenario-grid';
-import { scenarios, mockUsers } from '@/lib/data';
-import { useUser } from '@/firebase';
-import type { User } from '@/lib/types';
-import { useEffect } from 'react';
+import { scenarios } from '@/lib/data';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import type { User as AppUser } from '@/lib/types';
+import { useEffect, useMemo, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 export default function DashboardPage() {
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
+
+  const userDocRef = useMemo(() => {
+    if (!firestore || !authUser?.uid) return null;
+    return doc(firestore, "users", authUser.uid);
+  }, [firestore, authUser?.uid]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userDocRef);
 
   useEffect(() => {
     if (!isAuthLoading && !authUser) {
       router.replace('/auth');
     }
   }, [authUser, isAuthLoading, router]);
+
+  const handleTierChange = async (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => {
+    if (userDocRef) {
+      await updateDoc(userDocRef, { tier: newTier });
+    }
+  };
   
-  // For now, we will use mock user data to ensure the page loads.
-  const appUser: User | undefined = mockUsers.find(u => u.tier === 'PREMIUM');
+  const isLoading = isAuthLoading || isProfileLoading;
 
-  const isLoading = isAuthLoading;
-
-  if (isLoading || !appUser) {
+  if (isLoading || !userProfile) {
     return (
       <div className="min-h-screen bg-background">
         <main className="container mx-auto px-4 py-8">
@@ -54,10 +67,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <DashboardHeader user={appUser} />
+        <DashboardHeader user={userProfile} onTierChange={handleTierChange} />
         <section>
           <h2 className="text-2xl font-bold font-headline mb-4 text-foreground">Practice Scenarios</h2>
-          <ScenarioGrid scenarios={scenarios} user={appUser} />
+          <ScenarioGrid scenarios={scenarios} user={userProfile} />
         </section>
       </main>
     </div>

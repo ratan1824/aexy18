@@ -1,14 +1,22 @@
+
 import { Flame, ShieldCheck, MessageSquare } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import type { User } from '@/lib/types';
 import { tiers } from '@/lib/data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface DashboardHeaderProps {
   user: User;
+  onTierChange: (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => void;
 }
 
-export function DashboardHeader({ user }: DashboardHeaderProps) {
+export function DashboardHeader({ user, onTierChange }: DashboardHeaderProps) {
   const limit = tiers[user.tier].conversationsLimit;
 
   return (
@@ -34,19 +42,31 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Daily Limit</p>
-              <p className="text-2xl font-bold">{user.conversationsToday}/{limit}</p>
+              <p className="text-2xl font-bold">{user.conversationsToday}/{limit === 999 ? '∞' : limit}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 flex items-center">
-            <div className="bg-secondary p-3 rounded-full mr-4">
-              <ShieldCheck className="h-6 w-6 text-secondary-foreground" />
+          <CardContent className="p-4 flex items-center justify-between">
+             <div className='flex items-center'>
+                <div className="bg-secondary p-3 rounded-full mr-4">
+                <ShieldCheck className="h-6 w-6 text-secondary-foreground" />
+                </div>
+                <div>
+                <p className="text-sm font-medium text-muted-foreground">Level</p>
+                 <p className="font-bold">{user.tier}</p>
+                </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Level</p>
-              <Badge variant={user.tier === 'PREMIUM' ? 'default' : 'secondary' } className="text-base">{user.tier}</Badge>
-            </div>
+            <Select value={user.tier} onValueChange={(value: 'FREE' | 'STANDARD' | 'PREMIUM') => onTierChange(value)}>
+              <SelectTrigger className="w-auto ml-4">
+                <SelectValue placeholder="Change Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FREE">FREE</SelectItem>
+                <SelectItem value="STANDARD">STANDARD</SelectItem>
+                <SelectItem value="PREMIUM">PREMIUM</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
       </div>
