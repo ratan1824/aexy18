@@ -4,39 +4,36 @@
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ScenarioGrid } from '@/components/dashboard/scenario-grid';
-import { scenarios } from '@/lib/data';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { scenarios, getMockUser } from '@/lib/data';
+import { useUser } from '@/firebase';
 import type { User as AppUser } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 export default function DashboardPage() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
-  const firestore = useFirestore();
+  const { user: authUser, isUserLoading } = useUser();
   const router = useRouter();
-
-  const userDocRef = useMemo(() => {
-    if (!firestore || !authUser?.uid) return null;
-    return doc(firestore, "users", authUser.uid);
-  }, [firestore, authUser?.uid]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userDocRef);
+  const [userProfile, setUserProfile] = useState<AppUser | null>(null);
 
   useEffect(() => {
-    if (!isAuthLoading && !authUser) {
-      router.replace('/auth');
+    if (!isUserLoading) {
+      if (authUser) {
+        // In a real app, you'd fetch this from Firestore.
+        // For now, we'll use a mock user.
+        setUserProfile(getMockUser());
+      } else {
+        router.replace('/auth');
+      }
     }
-  }, [authUser, isAuthLoading, router]);
+  }, [authUser, isUserLoading, router]);
 
-  const handleTierChange = async (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => {
-    if (userDocRef) {
-      await updateDoc(userDocRef, { tier: newTier });
+  const handleTierChange = (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => {
+    if (userProfile) {
+      setUserProfile({ ...userProfile, tier: newTier });
     }
   };
   
-  const isLoading = isAuthLoading || isProfileLoading || (authUser && !userProfile);
+  const isLoading = isUserLoading || !userProfile;
 
   if (isLoading) {
     return (
@@ -62,13 +59,6 @@ export default function DashboardPage() {
         </main>
       </div>
     );
-  }
-
-  if (!userProfile) {
-    // This can happen if the doc doesn't exist or there was an auth error
-    // Redirecting to auth page for a clean slate.
-    router.replace('/auth');
-    return null;
   }
 
   return (

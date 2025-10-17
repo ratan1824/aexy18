@@ -26,6 +26,15 @@ export const mockUsers: User[] = [
   }
 ];
 
+export const getMockUser = (): User => ({
+    id: '1',
+    email: 'free@test.com',
+    tier: 'FREE',
+    conversationsToday: 2,
+    streak: 5
+});
+
+
 export const scenarios: Scenario[] = [
   {
     id: 1,
