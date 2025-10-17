@@ -8,7 +8,7 @@ import { scenarios } from '@/lib/data';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
@@ -36,9 +36,9 @@ export default function DashboardPage() {
     }
   };
   
-  const isLoading = isAuthLoading || isProfileLoading;
+  const isLoading = isAuthLoading || isProfileLoading || (authUser && !userProfile);
 
-  if (isLoading || !userProfile) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <main className="container mx-auto px-4 py-8">
@@ -62,6 +62,13 @@ export default function DashboardPage() {
         </main>
       </div>
     );
+  }
+
+  if (!userProfile) {
+    // This can happen if the doc doesn't exist or there was an auth error
+    // Redirecting to auth page for a clean slate.
+    router.replace('/auth');
+    return null;
   }
 
   return (

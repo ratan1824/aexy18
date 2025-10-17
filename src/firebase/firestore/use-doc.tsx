@@ -44,20 +44,23 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!docRef) {
-      setData(null);
+      // If the ref is null/undefined (e.g., user is logging out or ID is not ready),
+      // we are not technically "loading" a document, so set loading to false.
       setIsLoading(false);
+      setData(null);
       setError(null);
       return;
     }
 
+    // When we get a valid docRef, we start loading.
     setIsLoading(true);
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
+    setData(null); // Clear previous data
 
     const unsubscribe = onSnapshot(
       docRef,
