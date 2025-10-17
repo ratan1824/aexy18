@@ -5,13 +5,15 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Info } from 'lucide-react';
+import { Info, BrainCircuit, Smile } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface MessageBubbleProps {
   message: Message;
@@ -28,10 +30,39 @@ const FeedbackItem = ({ title, score, issues }: { title: string, score: number, 
   </div>
 );
 
+const LanguageFeedback = ({ partOfSpeech, emotion }: { partOfSpeech: { token: string; tag: string }[], emotion: string }) => (
+    <div className='space-y-3'>
+        <div>
+            <p className="font-semibold flex items-center gap-2"><BrainCircuit className="h-4 w-4" /> Parts of Speech</p>
+            <ScrollArea className="h-24 mt-1">
+                <div className="flex flex-wrap gap-1">
+                    {partOfSpeech.map((item, index) => (
+                    <TooltipProvider key={index} delayDuration={0}>
+                        <Tooltip>
+                        <TooltipTrigger>
+                            <Badge variant="secondary" className="cursor-default">{item.token}</Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center">
+                            <p>{item.tag}</p>
+                        </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    ))}
+                </div>
+            </ScrollArea>
+        </div>
+        <div>
+            <p className="font-semibold flex items-center gap-2"><Smile className="h-4 w-4" /> Emotion</p>
+            <p className="text-sm capitalize mt-1">{emotion}</p>
+        </div>
+    </div>
+)
+
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   
-  const hasFeedback = !isUser && message.feedback && (message.feedback.grammar || message.feedback.pronunciation);
+  const hasFeedback = !isUser && message.feedback && (message.feedback.grammar || message.feedback.pronunciation || message.feedback.language);
 
   return (
     <div className={cn('flex items-end gap-2', isUser ? 'justify-end' : 'justify-start')}>
@@ -55,10 +86,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
                   </TooltipTrigger>
-                  <TooltipContent className="bg-secondary text-secondary-foreground">
-                    <div className="space-y-2 p-1">
+                  <TooltipContent className="bg-secondary text-secondary-foreground w-64">
+                    <div className="space-y-3 p-2">
                       {message.feedback?.grammar && <FeedbackItem title="Grammar" {...message.feedback.grammar} />}
                       {message.feedback?.pronunciation && <FeedbackItem title="Pronunciation" {...message.feedback.pronunciation} />}
+                      {message.feedback?.language && <LanguageFeedback {...message.feedback.language} />}
                     </div>
                   </TooltipContent>
                 </Tooltip>

@@ -41,6 +41,10 @@ export interface Message {
       score: number;
       issues: string[];
     };
+    language?: {
+      partOfSpeech: { token: string; tag: string }[];
+      emotion: string;
+    };
   };
   avatar: string;
 }

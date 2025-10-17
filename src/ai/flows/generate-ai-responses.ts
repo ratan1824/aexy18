@@ -29,6 +29,13 @@ const GenerateAIResponseOutputSchema = z.object({
       score: z.number().describe('The pronunciation score.'),
       issues: z.array(z.string()).describe('The pronunciation issues.'),
     }).optional(),
+    language: z.object({
+        partOfSpeech: z.array(z.object({
+            token: z.string().describe('The word token from the user message.'),
+            tag: z.string().describe('The part of speech tag for the token (e.g., Noun, Verb, Adjective).'),
+        })).describe("An array of words from the user's message and their corresponding part of speech."),
+        emotion: z.string().describe("The primary emotion detected in the user's message (e.g., Neutral, Happy, Anxious)."),
+    }).describe("Feedback on the user's language usage, including parts of speech and emotional tone."),
   }).optional(),
 });
 
@@ -43,9 +50,14 @@ const generateAIResponsePrompt = ai.definePrompt({
   input: {schema: GenerateAIResponseInputSchema},
   output: {schema: GenerateAIResponseOutputSchema},
   prompt: `You are an English tutor conducting a job interview practice.
+Analyze the student's message for grammar, pronunciation, parts of speech, and emotional tone.
+Provide a score out of 100 for grammar and pronunciation, along with any issues.
+For language analysis, identify the part of speech for each word and the overall emotion of the message.
+Then, respond naturally as an interviewer and ask follow-up questions.
+
 Context: {{{conversationHistory}}}
 Student: {{{userMessage}}}
-Respond naturally and ask follow-up questions.`,
+`,
 });
 
 const generateAIResponseFlow = ai.defineFlow(
