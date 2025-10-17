@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "job-interview",
+      "description": "A professional setting for a job interview.",
+      "imageUrl": "https://picsum.photos/seed/job-interview/600/400",
+      "imageHint": "job interview"
+    },
+    {
+      "id": "restaurant-ordering",
+      "description": "A cozy restaurant scene.",
+      "imageUrl": "https://picsum.photos/seed/restaurant/600/400",
+      "imageHint": "restaurant ordering"
+    },
+    {
+      "id": "business-negotiation",
+      "description": "A modern office where a business negotiation takes place.",
+      "imageUrl": "https://picsum.photos/seed/business/600/400",
+      "imageHint": "business negotiation"
+    },
+    {
+      "id": "user-avatar",
+      "description": "Avatar for the user.",
+      "imageUrl": "https://picsum.photos/seed/user-avatar/100/100",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "ai-avatar",
+      "description": "Avatar for the AI.",
+      "imageUrl": "https://picsum.photos/seed/ai-avatar/100/100",
+      "imageHint": "robot face"
+    }
+  ]
 }
