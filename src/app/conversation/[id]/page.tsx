@@ -76,7 +76,7 @@ const ConversationPage: NextPage = () => {
           id: String(Date.now() + 1),
           role: 'ai',
           content: result.aiResponse,
-          timestamp: new Date().toISOString(),
+          timestamp: new D<ctrl61>ate().toISOString(),
           feedback: result.feedback,
           avatar: aiAvatar,
         };
@@ -100,7 +100,7 @@ const ConversationPage: NextPage = () => {
   const calculateSummary = () => {
     const userMessages = messages.filter(m => m.role === 'user');
     const aiFeedbackMessages = messages.filter(m => m.role === 'ai' && m.feedback);
-    const totalMessages = messages.length;
+    const totalMessages = userMessages.length;
 
     const duration = startTime ? (new Date().getTime() - startTime.getTime()) / 1000 : 0;
 
