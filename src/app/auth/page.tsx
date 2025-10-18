@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -109,6 +108,7 @@ export default function AuthPage() {
   }
 
   const handleLogin = async (values: FormValues) => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -124,6 +124,7 @@ export default function AuthPage() {
   };
 
   const handleSignUp = async (values: FormValues) => {
+    if (!auth || !firestore) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -150,7 +151,7 @@ export default function AuthPage() {
     }
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || user || !auth) {
     // Show a loading state while checking auth status or redirecting
     return <div className="text-center">Loading...</div>
   }

@@ -39,16 +39,21 @@ const HistoryPage = () => {
     }
   }, [authUser, isUserLoading, router]);
 
-  const isLoading = isUserLoading || areConversationsLoading;
+  const isLoading = isUserLoading || areConversationsLoading || !firestore;
 
   if (isLoading) {
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-            <Skeleton className="h-10 w-48 mb-8" />
-            <div className="space-y-4">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
+             <div className="max-w-4xl mx-auto">
+                <div className="mb-8 flex items-center gap-4">
+                    <Skeleton className="h-10 w-10" />
+                    <Skeleton className="h-10 w-48" />
+                </div>
+                <div className="space-y-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
             </div>
       </div>
     );
