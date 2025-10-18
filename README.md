@@ -27,8 +27,8 @@ Follow these instructions to get the project running on your local machine for d
 First, clone the repository and navigate into the project directory:
 
 ```bash
-git clone https://github.com/your-username/aexy-app.git
-cd aexy-app
+git clone <your-repository-url>
+cd <your-project-directory>
 ```
 
 Next, install the necessary dependencies:
@@ -39,18 +39,16 @@ npm install
 
 ### 3. Environment Variables (Critical for Security)
 
-This project requires API keys to connect to Google's AI services (Gemini). To keep these keys secure and private, you must use environment variables.
+This project requires an API key to connect to Google's AI services (Gemini). To keep this key secure, you **must** use environment variables.
 
 **Never commit API keys directly to your repository.**
 
 1.  **Create a local environment file:**
-    In the root of the project, create a file named `.env.local`.
+    In the root of the project, create a file named `.env.local`. This file is already listed in `.gitignore` to prevent it from being accidentally committed.
 
     ```bash
     touch .env.local
     ```
-
-    This file is already listed in `.gitignore` to prevent it from being accidentally committed to GitHub.
 
 2.  **Add your Gemini API Key:**
     Open the `.env.local` file and add your Gemini API key. You can get this key from [Google AI Studio](https://makersuite.google.com/app/apikey).
@@ -59,7 +57,7 @@ This project requires API keys to connect to Google's AI services (Gemini). To k
     GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
     ```
 
-    **Note:** The public-facing Firebase configuration in `src/firebase/config.ts` is safe to keep in the code. Your app's security is handled by Firestore Security Rules, not by hiding these particular keys.
+    **Note:** The public-facing Firebase configuration in `src/firebase/config.ts` is safe to keep in your code. Your app's security is handled by Firestore Security Rules, not by hiding those particular keys.
 
 ### 4. Running the Development Server
 
@@ -73,23 +71,23 @@ Open [http://localhost:9002](http://localhost:9002) in your browser to see the a
 
 ---
 
-## Deployment
+## Deployment to Vercel
 
 This project is optimized for deployment on [Vercel](https://vercel.com/), the platform from the creators of Next.js.
 
 ### Connecting to Vercel via GitHub
 
-1.  **Push to GitHub:** Push your project code to a new GitHub repository.
+1.  **Push to GitHub:** Create a new repository on GitHub and push your project code to it.
 2.  **Import Project on Vercel:**
     - Go to your Vercel dashboard and click "Add New... > Project".
-    - Select your GitHub repository.
+    - Select and import your new GitHub repository.
     - Vercel will automatically detect that it's a Next.js project and configure the build settings for you.
 
 ### Adding Environment Variables to Vercel
 
 This is the most important step for a successful and secure deployment.
 
-1.  In your Vercel project's dashboard, go to the **Settings** tab.
+1.  In your new Vercel project's dashboard, go to the **Settings** tab.
 2.  Click on **Environment Variables** in the left sidebar.
 3.  Add a new variable:
     - **Name:** `GEMINI_API_KEY`
@@ -98,6 +96,4 @@ This is the most important step for a successful and secure deployment.
 
 ### Deploy
 
-After adding the environment variable, go to the **Deployments** tab in Vercel and trigger a new deployment. Vercel will now build your project using your secret key without it ever being exposed in your source code.
-
-Your existing link will now point to this deployed project.
+After adding the environment variable, go to the **Deployments** tab in Vercel and trigger a new deployment. Vercel will build your project using your secret key without it ever being exposed in your source code. Vercel will assign a new, unique URL to this deployment.

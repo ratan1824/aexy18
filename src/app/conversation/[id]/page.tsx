@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { NextPage } from 'next';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationHeader } from '@/components/conversation/header';
@@ -14,7 +14,7 @@ import { generateAIResponseAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
 import { useFirebase, useUser } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -33,15 +33,11 @@ const ConversationPage: NextPage = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   
   const { toast } = useToast();
-
-  const [userAvatar, setUserAvatar] = useState('');
-  const [aiAvatar, setAiAvatar] = useState('');
+  
   const [startTime, setStartTime] = useState<Date | null>(null);
 
-  useEffect(() => {
-    setUserAvatar(PlaceHolderImages.find(img => img.id === 'user-avatar')?.imageUrl || '');
-    setAiAvatar(PlaceHolderImages.find(img => img.id === 'ai-avatar')?.imageUrl || '');
-  }, []);
+  const userAvatar = useMemo(() => PlaceHolderImages.find(img => img.id === 'user-avatar')?.imageUrl || '', []);
+  const aiAvatar = useMemo(() => PlaceHolderImages.find(img => img.id === 'ai-avatar')?.imageUrl || '', []);
 
   // Effect for handling redirection
   useEffect(() => {
@@ -54,60 +50,71 @@ const ConversationPage: NextPage = () => {
 
   // Effect for initializing the conversation
   useEffect(() => {
-    if (!areServicesAvailable || !authUser || !scenarioId || !firestore) {
+    // Guards to ensure all dependencies are ready
+    if (!areServicesAvailable || !authUser || !scenarioId || !firestore || !aiAvatar) {
       return;
     }
     
-    // Prevent re-initialization
+    // Prevent re-initialization if a conversation is already in progress
     if (conversationId) return;
-    
-    // Ensure avatars are loaded before starting
-    if (!aiAvatar) return;
 
     const currentScenario = getScenario(scenarioId);
-    if (currentScenario) {
-      setScenario(currentScenario);
-      
-      const conversationsRef = collection(firestore, 'users', authUser.uid, 'conversations');
-      const conversationData = {
-          scenarioId,
-          userId: authUser.uid,
-          startedAt: serverTimestamp(),
-          status: 'active',
-      };
-      addDoc(conversationsRef, conversationData).then(newConversationRef => {
-        setConversationId(newConversationRef.id);
-        const initialMessage: Message = {
-          id: '0',
-          role: 'ai',
-          content: currentScenario.initialPrompt,
-          timestamp: new Date().toISOString(),
-          avatar: aiAvatar,
-        };
-        setMessages([initialMessage]);
-        
-        const messagesRef = collection(newConversationRef, 'messages');
-        const messageData = { role: 'ai', content: initialMessage.content, createdAt: serverTimestamp() };
-        addDoc(messagesRef, messageData).catch(error => {
-            const permissionError = new FirestorePermissionError({
-                path: messagesRef.path,
-                operation: 'create',
-                requestResourceData: messageData
-            });
-            errorEmitter.emit('permission-error', permissionError);
+    if (!currentScenario) {
+        toast({
+            title: "Scenario not found",
+            description: "Redirecting to dashboard...",
+            variant: "destructive"
         });
-        
-        setStartTime(new Date());
-      }).catch(error => {
+        router.replace('/dashboard');
+        return;
+    }
+    
+    setScenario(currentScenario);
+      
+    const conversationsRef = collection(firestore, 'users', authUser.uid, 'conversations');
+    const conversationData = {
+        scenarioId,
+        userId: authUser.uid,
+        startedAt: serverTimestamp(),
+        status: 'active',
+    };
+    
+    addDoc(conversationsRef, conversationData).then(newConversationRef => {
+      setConversationId(newConversationRef.id);
+      const initialMessage: Message = {
+        id: '0',
+        role: 'ai',
+        content: currentScenario.initialPrompt,
+        timestamp: new Date().toISOString(),
+        avatar: aiAvatar,
+      };
+      setMessages([initialMessage]);
+      
+      const messagesRef = collection(newConversationRef, 'messages');
+      const messageData = { role: 'ai', content: initialMessage.content, createdAt: serverTimestamp() };
+      
+      // Non-blocking write
+      addDoc(messagesRef, messageData).catch(error => {
           const permissionError = new FirestorePermissionError({
-              path: conversationsRef.path,
+              path: messagesRef.path,
               operation: 'create',
-              requestResourceData: conversationData
+              requestResourceData: messageData
           });
           errorEmitter.emit('permission-error', permissionError);
       });
-    }
-  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, conversationId]);
+      
+      setStartTime(new Date());
+
+    }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: conversationsRef.path,
+            operation: 'create',
+            requestResourceData: conversationData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+
+  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, router, toast, conversationId]); // conversationId prevents re-runs
 
 
   const handleSendMessage = async (content: string) => {
@@ -177,6 +184,7 @@ const ConversationPage: NextPage = () => {
         title: "Error",
         description: "Failed to get a response from the AI. Please try again.",
       });
+      // Rollback the user message on UI if AI fails
       setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
     } finally {
       setIsLoading(false);
@@ -223,7 +231,7 @@ const ConversationPage: NextPage = () => {
     setIsEnded(true);
   };
   
-  if (isUserLoading || !areServicesAvailable || !scenario) {
+  if (isUserLoading || !areServicesAvailable || !scenario || !authUser) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 

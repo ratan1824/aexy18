@@ -75,6 +75,9 @@ const generateAIResponseFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await generateAIResponsePrompt(input);
-    return output!;
+    if (!output) {
+      return { aiResponse: "I'm sorry, I'm having trouble responding right now. Please try again." };
+    }
+    return output;
   }
 );

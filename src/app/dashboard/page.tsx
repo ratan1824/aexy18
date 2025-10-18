@@ -2,14 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/header';
-import { scenarios, getMockUserByTier } from '@/lib/data';
+import { scenarios } from '@/lib/data';
 import { useUser, useFirebase, useDoc } from '@/firebase';
 import type { User as AppUser } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScenarioCard } from '@/components/dashboard/scenario-card';
 import { UpgradeModal } from '@/components/dashboard/upgrade-modal';
-import Image from 'next/image';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
@@ -26,9 +25,6 @@ export default function DashboardPage() {
   const { data: userProfile, isLoading: isUserDataLoading } = useDoc<AppUser>(userDocRef);
 
   const [isUpgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  
-  // This state is purely for the tier-switching demo in the UI
-  const [displayTier, setDisplayTier] = useState<AppUser['tier'] | null>(null);
 
   // Effect to redirect if not logged in
   useEffect(() => {
@@ -37,10 +33,11 @@ export default function DashboardPage() {
     }
   }, [authUser, isUserLoading, router]);
   
-  // Effect to handle user document creation as a fallback
+  // Effect to handle user document creation as a fallback.
+  // This is crucial for users who might exist in Auth but not in Firestore.
   useEffect(() => {
-    if (firestore && authUser && !isUserDataLoading && !userProfile) {
-        // If user is loaded, but profile doc doesn't exist, create it.
+    if (firestore && authUser && userDocRef && !isUserDataLoading && !userProfile) {
+        // If auth is loaded, but profile doc doesn't exist, create it.
         const newUserDoc = {
             id: authUser.uid,
             email: authUser.email,
@@ -49,32 +46,19 @@ export default function DashboardPage() {
             conversationsToday: 0,
             streak: 0,
         };
-        setDoc(userDocRef!, newUserDoc);
+        // Use setDoc to safely create the document.
+        setDoc(userDocRef, newUserDoc);
     }
   }, [firestore, authUser, userDocRef, isUserDataLoading, userProfile]);
+  
+  const isLoading = isUserLoading || isUserDataLoading || !areServicesAvailable;
 
-  // Effect to sync display tier with loaded user profile
-  useEffect(() => {
-    if (userProfile) {
-      setDisplayTier(userProfile.tier);
+  // This purely simulates tier changes on the client for the demo.
+  const handleTierChange = (newTier: AppUser['tier']) => {
+    if (userDocRef) {
+        updateDoc(userDocRef, { tier: newTier });
     }
-  }, [userProfile]);
-
-
-  const handleTierChange = (newTier: 'FREE' | 'STANDARD' | 'PREMIUM') => {
-    setDisplayTier(newTier);
   };
-  
-  const isLoading = isUserLoading || isUserDataLoading || !userProfile || !displayTier;
-  
-  const userForDisplay = useMemo(() => {
-    // Only build the display user object if we have a profile and a displayTier
-    if (userProfile && displayTier) {
-        return { ...userProfile, tier: displayTier };
-    }
-    // Return a default mock user for the loading state to prevent crashes
-    return getMockUserByTier('FREE');
-  }, [userProfile, displayTier]);
   
   if (isLoading) {
     return (
@@ -102,10 +86,16 @@ export default function DashboardPage() {
     );
   }
 
+  // Once loading is complete, if there's still no profile, show a more specific message.
+  if (!userProfile) {
+    return <div className="flex h-screen items-center justify-center">Creating your profile...</div>;
+  }
+
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="container mx-auto px-4 py-8 animate-in fade-in-0 duration-500">
-        <DashboardHeader user={userForDisplay} onTierChange={handleTierChange} />
+        <DashboardHeader user={userProfile} onTierChange={handleTierChange} />
         <section className="py-12">
           <h2 className="text-3xl font-bold font-headline mb-8 text-center">Practice Scenarios</h2>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -113,7 +103,7 @@ export default function DashboardPage() {
                 <ScenarioCard
                   key={scenario.id}
                   scenario={scenario}
-                  user={userForDisplay}
+                  user={userProfile}
                   onOpenUpgradeModal={() => setUpgradeModalOpen(true)}
                 />
               ))}
