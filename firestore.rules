@@ -1,154 +1,154 @@
-/**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for data privacy and security.
- * All data is nested under /users/{userId}, ensuring that users can only access their own data.
- * The /scenarios collection is publicly readable.
- *
- * Key Security Decisions:
- * - User listing is implicitly disallowed as there are no rules for listing the /users collection itself.
- * - The /scenarios collection is publicly readable but writes are denied (admin-only writes are not yet implemented, but the structure supports this).
- * - All user-owned data is secured by path-based ownership.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces document ownership for the /users collection.
-     * @path /users/{userId}
-     * @allow (create) User with ID 'user123' creates their profile.
-     *   - request.auth.uid: 'user123'
-     *   - request.resource.data.id: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their profile.
-     *   - request.auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' tries to create profile for 'user456'.
-     *   - request.auth.uid: 'user123'
-     *   - request.resource.data.id: 'user456'
-     * @deny (get, update, delete) User with ID 'user123' tries to read/update/delete profile for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     * @description Checks if the request is made by a signed-in user.
+     * @returns {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user ID matches the provided user ID.
+     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @returns {boolean} True if the user IDs match, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of an existing document.
+     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @returns {boolean} True if the user IDs match and the resource exists, false otherwise.
+     */
+    // function isExistingOwner(userId) {
+    //   return isOwner(userId) && exists(resource.data.id);
+    // }
+
+    /**
+     * @description Security rules for the /users/{userId} collection.
+     * @path /databases/{database}/documents/users/{userId}
+     * @allow (create) Signed-in user creates their own user document.
+     * @allow (get) Signed-in user reads their own user document.
+     * @allow (update) Signed-in user updates their own user document.
+     * @allow (delete) Signed-in user deletes their own user document.
+     * @deny (create) Signed-in user attempts to create a user document for another user.
+     * @deny (get) Signed-in user attempts to read another user's document.
+     * @deny (update) Signed-in user attempts to update another user's document.
+     * @deny (delete) Signed-in user attempts to delete another user's document.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing users is not permitted.
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Enforces document ownership for the /daily_usage subcollection.
-     * @path /users/{userId}/daily_usage/{dailyUsageId}
-     * @allow (create) User with ID 'user123' creates a daily usage record.
-     *   - request.auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their daily usage record.
-     *   - request.auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' tries to create a daily usage record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' tries to read/update/delete daily usage record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @description Security rules for the /users/{userId}/daily_usage/{dailyUsageId} collection.
+     * @path /databases/{database}/documents/users/{userId}/daily_usage/{dailyUsageId}
+     * @allow (create) Signed-in user creates a daily usage document for themselves.
+     * @allow (get) Signed-in user reads their own daily usage document.
+     * @allow (update) Signed-in user updates their own daily usage document.
+     * @allow (delete) Signed-in user deletes their own daily usage document.
+     * @deny (create) Signed-in user attempts to create a daily usage document for another user.
+     * @deny (get) Signed-in user attempts to read another user's daily usage document.
+     * @deny (update) Signed-in user attempts to update another user's daily usage document.
+     * @deny (delete) Signed-in user attempts to delete another user's daily usage document.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/daily_usage/{dailyUsageId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Enforces document ownership for the /subscriptions subcollection.
-     * @path /users/{userId}/subscriptions/{subscriptionId}
-     * @allow (create) User with ID 'user123' creates a subscription record.
-     *   - request.auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their subscription record.
-     *   - request.auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' tries to create a subscription record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' tries to read/update/delete subscription record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @description Security rules for the /users/{userId}/subscriptions/{subscriptionId} collection.
+     * @path /databases/{database}/documents/users/{userId}/subscriptions/{subscriptionId}
+     * @allow (create) Signed-in user creates a subscription document for themselves.
+     * @allow (get) Signed-in user reads their own subscription document.
+     * @allow (update) Signed-in user updates their own subscription document.
+     * @allow (delete) Signed-in user deletes their own subscription document.
+     * @deny (create) Signed-in user attempts to create a subscription document for another user.
+     * @deny (get) Signed-in user attempts to read another user's subscription document.
+     * @deny (update) Signed-in user attempts to update another user's subscription document.
+     * @deny (delete) Signed-in user attempts to delete another user's subscription document.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/subscriptions/{subscriptionId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Enforces document ownership for the /conversations subcollection.
-     * @path /users/{userId}/conversations/{conversationId}
-     * @allow (create) User with ID 'user123' creates a conversation record.
-     *   - request.auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their conversation record.
-     *   - request.auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' tries to create a conversation record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' tries to read/update/delete conversation record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @description Security rules for the /users/{userId}/conversations/{conversationId} collection.
+     * @path /databases/{database}/documents/users/{userId}/conversations/{conversationId}
+     * @allow (create) Signed-in user creates a conversation document for themselves.
+     * @allow (get) Signed-in user reads their own conversation document.
+     * @allow (update) Signed-in user updates their own conversation document.
+     * @allow (delete) Signed-in user deletes their own conversation document.
+     * @deny (create) Signed-in user attempts to create a conversation document for another user.
+     * @deny (get) Signed-in user attempts to read another user's conversation document.
+     * @deny (update) Signed-in user attempts to update another user's conversation document.
+     * @deny (delete) Signed-in user attempts to delete another user's conversation document.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/conversations/{conversationId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Enforces document ownership for the /messages subcollection.
-     * @path /users/{userId}/conversations/{conversationId}/messages/{messageId}
-     * @allow (create) User with ID 'user123' creates a message record.
-     *   - request.auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their message record.
-     *   - request.auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' tries to create a message record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' tries to read/update/delete message record for 'user456'.
-     *   - request.auth.uid: 'user123'
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @description Security rules for the /users/{userId}/conversations/{conversationId}/messages/{messageId} collection.
+     * @path /databases/{database}/documents/users/{userId}/conversations/{conversationId}/messages/{messageId}
+     * @allow (create) Signed-in user creates a message document within their own conversation.
+     * @allow (get) Signed-in user reads their own message document.
+     * @allow (update) Signed-in user updates their own message document.
+     * @allow (delete) Signed-in user deletes their own message document.
+     * @deny (create) Signed-in user attempts to create a message document within another user's conversation.
+     * @deny (get) Signed-in user attempts to read another user's message document.
+     * @deny (update) Signed-in user attempts to update another user's message document.
+     * @deny (delete) Signed-in user attempts to delete another user's message document.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/conversations/{conversationId}/messages/{messageId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Allows public read access to the /scenarios collection.
-     * @path /scenarios/{scenarioId}
-     * @allow (get, list) Any user can read scenario data.
-     *   - request.auth.uid: null (or any value)
-     * @deny (create, update, delete) No user can create, update, or delete scenario data.
-     *   - request.auth.uid: any value
-     * @principle Allows public read access and restricts write access.
+     * @description Security rules for the /scenarios/{scenarioId} collection.
+     * @path /databases/{database}/documents/scenarios/{scenarioId}
+     * @allow (get) Any user can read scenario documents.
+     * @allow (list) Any user can list scenario documents.
+     * @deny (create) No user can create scenario documents without proper authorization.
+     * @deny (update) No user can update scenario documents without proper authorization.
+     * @deny (delete) No user can delete scenario documents without proper authorization.
+     * @principle Allows public read access to scenario data.
      */
     match /scenarios/{scenarioId} {
       allow get: if true;
       allow list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false;  // TODO: Add admin-only create rule if needed.
+      allow update: if false;  // TODO: Add admin-only update rule if needed.
+      allow delete: if false;  // TODO: Add admin-only delete rule if needed.
     }
-
-  }
-
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }
