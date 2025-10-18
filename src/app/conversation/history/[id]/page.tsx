@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy, type Firestore, type DocumentData, type CollectionReference } from 'firebase/firestore';
+import { collection, doc, query, orderBy, type Firestore, type DocumentData, type CollectionReference, type Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scenarios } from '@/lib/data';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MessageList } from '@/components/conversation/message-list';
-import type { Message, Scenario, WithId } from '@/lib/types';
+import type { Message, Scenario } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface ConversationData {
@@ -21,6 +21,10 @@ interface ConversationData {
     seconds: number;
     nanoseconds: number;
   };
+}
+
+interface MessageData extends Omit<Message, 'timestamp'> {
+    createdAt: Timestamp;
 }
 
 const ConversationHistoryDetail = () => {
@@ -49,7 +53,7 @@ const ConversationHistoryDetail = () => {
   }, [conversationRef]);
 
   const { data: conversation, isLoading: isConversationLoading } = useDoc<ConversationData>(conversationRef);
-  const { data: messages, isLoading: areMessagesLoading } = useCollection<Message>(messagesQuery as CollectionReference<DocumentData> | Query<DocumentData, DocumentData> | null | undefined);
+  const { data: messages, isLoading: areMessagesLoading } = useCollection<MessageData>(messagesQuery as CollectionReference<DocumentData> | Query<DocumentData, DocumentData> | null | undefined);
 
   const scenario = useMemo(() => {
     if (!conversation) return null;
@@ -85,7 +89,7 @@ const ConversationHistoryDetail = () => {
   const formattedMessages: Message[] = messages ? messages.map(msg => ({
     ...msg,
     avatar: msg.role === 'user' ? userAvatar : aiAvatar,
-    timestamp: msg.createdAt?.toString() || new Date().toISOString()
+    timestamp: msg.createdAt?.toDate().toISOString() || new Date().toISOString()
   })) : [];
 
 
