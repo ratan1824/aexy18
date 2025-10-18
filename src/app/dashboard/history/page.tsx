@@ -5,13 +5,14 @@ import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy, Query } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { scenarios } from '@/lib/data';
 import { ArrowLeft, MessageSquare, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import type { User } from 'firebase/auth';
 
 interface ConversationItem {
   id: string;
@@ -22,7 +23,7 @@ interface ConversationItem {
   };
 }
 
-const ConversationHistory = ({ user }: { user: NonNullable<ReturnType<typeof useUser>['user']> }) => {
+const ConversationHistory = ({ user }: { user: User }) => {
     const { firestore } = useFirebase();
 
     const conversationsQuery = useMemo(() => {
