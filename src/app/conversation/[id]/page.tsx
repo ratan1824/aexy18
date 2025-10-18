@@ -40,17 +40,23 @@ const ConversationPage: NextPage = () => {
     setAiAvatar(PlaceHolderImages.find(img => img.id === 'ai-avatar')?.imageUrl || '');
   }, []);
 
+  // Effect for handling redirection
   useEffect(() => {
-    // Wait until firebase services are available and user auth state is determined.
     if (isUserLoading || !areServicesAvailable) return;
-    
+
     if (!authUser) {
       router.replace('/auth');
+    }
+  }, [authUser, isUserLoading, areServicesAvailable, router]);
+
+  // Effect for initializing the conversation
+  useEffect(() => {
+    if (!areServicesAvailable || !authUser || !scenarioId || !aiAvatar || conversationId) {
       return;
     }
-
+    
     const currentScenario = getScenario(scenarioId);
-    if (currentScenario && aiAvatar && !conversationId) { // Ensure this runs only once
+    if (currentScenario) {
       setScenario(currentScenario);
       
       incrementConversationsTodayAction(authUser.uid);
@@ -69,7 +75,8 @@ const ConversationPage: NextPage = () => {
         setStartTime(new Date());
       });
     }
-  }, [scenarioId, aiAvatar, authUser, isUserLoading, areServicesAvailable, router, conversationId]);
+  }, [scenarioId, aiAvatar, authUser, areServicesAvailable, conversationId]);
+
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading || !scenario || !authUser || !conversationId) return;
