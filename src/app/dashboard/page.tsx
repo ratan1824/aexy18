@@ -10,15 +10,6 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScenarioCard } from '@/components/dashboard/scenario-card';
 import { UpgradeModal } from '@/components/dashboard/upgrade-modal';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
-import { Card, CardContent } from "@/components/ui/card"
-
 
 export default function DashboardPage() {
   const { user: authUser, isUserLoading } = useUser();
@@ -31,7 +22,7 @@ export default function DashboardPage() {
       if (authUser) {
         // In a real app, you'd fetch this from Firestore.
         // For now, we'll use a mock user.
-        setUserProfile(getMockUserByTier('FREE'));
+        setUserProfile(getMockUserByTier('PREMIUM'));
       } else {
         router.replace('/auth');
       }
@@ -75,34 +66,20 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 py-8">
         <DashboardHeader user={userProfile} onTierChange={handleTierChange} />
         <section className="py-12">
-          <h2 className="text-2xl font-bold font-headline mb-8 text-center text-foreground">Practice Scenarios</h2>
-          <Carousel 
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full max-w-4xl mx-auto"
-          >
-            <CarouselContent className="-ml-1 py-4">
-              {scenarios.map((scenario, index) => (
-                <CarouselItem key={index} className="pl-1 md:basis-1/2 lg:basis-1/3">
-                  <div className="p-1">
-                      <ScenarioCard
-                        scenario={scenario}
-                        user={userProfile}
-                        onOpenUpgradeModal={() => setUpgradeModalOpen(true)}
-                      />
-                  </div>
-                </CarouselItem>
+          <h2 className="text-3xl font-bold font-headline mb-8 text-center text-foreground">Practice Scenarios</h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {scenarios.map((scenario) => (
+                <ScenarioCard
+                  key={scenario.id}
+                  scenario={scenario}
+                  user={userProfile}
+                  onOpenUpgradeModal={() => setUpgradeModalOpen(true)}
+                />
               ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden sm:flex"/>
-            <CarouselNext className="hidden sm:flex"/>
-          </Carousel>
+            </div>
         </section>
       </main>
       <UpgradeModal isOpen={isUpgradeModalOpen} onOpenChange={setUpgradeModalOpen} />
     </div>
   );
 }
-
