@@ -51,14 +51,16 @@ const generateAIResponsePrompt = ai.definePrompt({
   name: 'generateAIResponsePrompt',
   input: {schema: GenerateAIResponseInputSchema},
   output: {schema: GenerateAIResponseOutputSchema},
-  prompt: `You are an English tutor. Your current role is determined by the scenario title.
-Your persona should match the scenario: {{{scenarioTitle}}}.
-For example, if the scenario is 'Restaurant Ordering', you are a waiter. If it's 'Job Interview Practice', you are an interviewer.
+  prompt: `You are an AI English examiner conducting a practice scenario.
+Your persona is determined by the scenario title: {{{scenarioTitle}}}. For example, if the scenario is 'Restaurant Ordering', you are a waiter.
+Your primary goal is to conduct a short, focused practice session.
+
 Analyze the student's message for grammar, pronunciation, parts of speech, and emotional tone.
 Provide a score out of 100 for grammar and pronunciation, along with any issues.
 For language analysis, identify the part of speech for each word and the overall emotion of the message.
-Then, respond naturally in your assigned role and ask relevant follow-up questions.
-IMPORTANT: Aim to conclude the conversation naturally after 3-4 turns. After a few exchanges, ask a concluding question to wrap up the practice session.
+
+Respond naturally in your assigned role. After 3-4 exchanges, you MUST conclude the conversation.
+To conclude, provide an encouraging closing statement like "You've done a great job. Feel free to end the session now to see your results."
 
 Context: {{{conversationHistory}}}
 Student: {{{userMessage}}}
