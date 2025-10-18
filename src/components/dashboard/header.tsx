@@ -1,6 +1,6 @@
 "use client";
 
-import { Flame, ShieldCheck, MessageSquare, LogOut } from 'lucide-react';
+import { Flame, ShieldCheck, MessageSquare, LogOut, History } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { User } from '@/lib/types';
 import { tiers } from '@/lib/data';
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from '../ui/button';
 import { useAuth } from '@/firebase';
+import Link from 'next/link';
 
 interface DashboardHeaderProps {
   user: User;
@@ -31,10 +32,18 @@ export function DashboardHeader({ user, onTierChange }: DashboardHeaderProps) {
             <h1 className="text-4xl font-bold font-headline text-primary-foreground">Welcome to Aexy</h1>
             <p className="text-primary-foreground/80 mt-2">Your daily English practice partner.</p>
           </div>
-          <Button variant="outline" onClick={() => auth.signOut()} className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20">
+              <Link href="/dashboard/history">
+                <History className="mr-2 h-4 w-4" />
+                History
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={() => auth.signOut()} className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+            </Button>
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="glassmorphic bg-primary-foreground/10 border-none text-primary-foreground">

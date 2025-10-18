@@ -2,25 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import type { NextPage } from 'next';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ConversationHeader } from '@/components/conversation/header';
 import { MessageList } from '@/components/conversation/message-list';
 import { MessageInput } from '@/components/conversation/message-input';
 import { getScenario } from '@/lib/data';
 import type { Message, Scenario } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { generateAIResponseAction } from '@/app/actions';
+import { generateAIResponseAction, createConversationAction, addMessageAction, incrementConversationsTodayAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
+import { useUser } from '@/firebase';
 
 const ConversationPage: NextPage = () => {
   const params = useParams();
+  const router = useRouter();
+  const { user: authUser, isUserLoading } = useUser();
   const scenarioId = Number(params.id);
+
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<SummaryProps | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   const [userAvatar, setUserAvatar] = useState('');
@@ -33,23 +39,36 @@ const ConversationPage: NextPage = () => {
   }, []);
 
   useEffect(() => {
+    if (isUserLoading) return;
+    if (!authUser) {
+      router.replace('/auth');
+      return;
+    }
+
     const currentScenario = getScenario(scenarioId);
     if (currentScenario && aiAvatar) {
       setScenario(currentScenario);
-      const initialMessage: Message = {
-        id: '0',
-        role: 'ai',
-        content: currentScenario.initialPrompt,
-        timestamp: new Date().toISOString(),
-        avatar: aiAvatar,
-      };
-      setMessages([initialMessage]);
-      setStartTime(new Date());
+      
+      incrementConversationsTodayAction(authUser.uid);
+
+      createConversationAction(authUser.uid, scenarioId).then(newConversationId => {
+        setConversationId(newConversationId);
+        const initialMessage: Message = {
+          id: '0',
+          role: 'ai',
+          content: currentScenario.initialPrompt,
+          timestamp: new Date().toISOString(),
+          avatar: aiAvatar,
+        };
+        setMessages([initialMessage]);
+        addMessageAction(authUser.uid, newConversationId, { role: 'ai', content: initialMessage.content });
+        setStartTime(new Date());
+      });
     }
-  }, [scenarioId, aiAvatar]);
+  }, [scenarioId, aiAvatar, authUser, isUserLoading, router]);
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading || !scenario) return;
+    if (!content.trim() || isLoading || !scenario || !authUser || !conversationId) return;
 
     const userMessage: Message = {
       id: String(Date.now()),
@@ -59,6 +78,7 @@ const ConversationPage: NextPage = () => {
       avatar: userAvatar,
     };
     setMessages(prev => [...prev, userMessage]);
+    addMessageAction(authUser.uid, conversationId, { role: 'user', content: userMessage.content });
     setIsLoading(true);
 
     try {
@@ -82,6 +102,7 @@ const ConversationPage: NextPage = () => {
           avatar: aiAvatar,
         };
         setMessages(prev => [...prev, aiMessage]);
+        addMessageAction(authUser.uid, conversationId, { role: 'ai', content: aiMessage.content, feedback: aiMessage.feedback });
       } else {
         throw new Error('No AI response received.');
       }
@@ -137,9 +158,9 @@ const ConversationPage: NextPage = () => {
     calculateSummary();
     setIsEnded(true);
   };
-
-  if (!scenario) {
-    return <div className="flex h-screen items-center justify-center">Loading scenario...</div>;
+  
+  if (isUserLoading || !scenario) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   return (
