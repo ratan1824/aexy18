@@ -1,3 +1,26 @@
+/**
+ * @fileoverview Firestore Security Rules for the Aexy English learning app.
+ *
+ * Core Philosophy: This ruleset enforces a strict user-ownership model,
+ * ensuring that users can only access data associated with their own accounts.
+ *
+ * Data Structure: All user-specific data (daily usage, subscriptions,
+ * conversations, and messages) is nested under the /users/{userId} path.
+ * The /scenarios/{scenarioId} collection is publicly readable.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data.
+ * - Listing all users is disallowed for privacy.
+ * - The scenarios collection is publicly readable to allow access to all scenarios.
+ *
+ * Denormalization for Authorization:
+ *  - The userId is embedded in the path for all user-owned data to avoid
+ *    the need for `get()` calls to verify ownership.
+ * Structural Segregation:
+ * - Private user data is stored under the /users/{userId} collection, while
+ *   publicly readable scenario data is stored in the top-level /scenarios
+ *   collection.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -12,7 +35,7 @@ service cloud.firestore {
 
     /**
      * @description Checks if the authenticated user ID matches the provided user ID.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @param {string} userId The user ID to compare against the authenticated user ID.
      * @returns {boolean} True if the user IDs match, false otherwise.
      */
     function isOwner(userId) {
@@ -21,134 +44,135 @@ service cloud.firestore {
 
     /**
      * @description Checks if the authenticated user is the owner of an existing document.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
-     * @returns {boolean} True if the user IDs match and the resource exists, false otherwise.
+     *              Combines the ownership check with a document existence check.
+     * @param {string} userId The user ID to compare against the authenticated user ID.
+     * @returns {boolean} True if the user IDs match and the document exists, false otherwise.
      */
-    // function isExistingOwner(userId) {
-    //   return isOwner(userId) && exists(resource.data.id);
-    // }
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
 
     /**
      * @description Security rules for the /users/{userId} collection.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) Signed-in user creates their own user document.
-     * @allow (get) Signed-in user reads their own user document.
-     * @allow (update) Signed-in user updates their own user document.
-     * @allow (delete) Signed-in user deletes their own user document.
-     * @deny (create) Signed-in user attempts to create a user document for another user.
-     * @deny (get) Signed-in user attempts to read another user's document.
-     * @deny (update) Signed-in user attempts to update another user's document.
-     * @deny (delete) Signed-in user attempts to delete another user's document.
-     * @principle Enforces document ownership for all operations.
+     * @path /users/{userId}
+     * @allow (create) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can create their own profile.
+     * @allow (get) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can get their own profile.
+     * @allow (update) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can update their own profile.
+     * @allow (delete) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can delete their own profile.
+     * @deny (create) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to create profile for another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (get) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to get profile of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (update) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to update profile of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (delete) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to delete profile of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false; // Listing users is not permitted.
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Security rules for the /users/{userId}/daily_usage/{dailyUsageId} collection.
-     * @path /databases/{database}/documents/users/{userId}/daily_usage/{dailyUsageId}
-     * @allow (create) Signed-in user creates a daily usage document for themselves.
-     * @allow (get) Signed-in user reads their own daily usage document.
-     * @allow (update) Signed-in user updates their own daily usage document.
-     * @allow (delete) Signed-in user deletes their own daily usage document.
-     * @deny (create) Signed-in user attempts to create a daily usage document for another user.
-     * @deny (get) Signed-in user attempts to read another user's daily usage document.
-     * @deny (update) Signed-in user attempts to update another user's daily usage document.
-     * @deny (delete) Signed-in user attempts to delete another user's daily usage document.
-     * @principle Enforces document ownership for all operations.
+     * @path /users/{userId}/daily_usage/{dailyUsageId}
+     * @allow (create) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can create daily usage for themselves.
+     * @allow (get) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can get their own daily usage.
+     * @allow (update) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can update their own daily usage.
+     * @allow (delete) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can delete their own daily usage.
+     * @deny (create) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to create daily usage for another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (get) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to get daily usage of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (update) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to update daily usage of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (delete) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to delete daily usage of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId}/daily_usage/{dailyUsageId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Security rules for the /users/{userId}/subscriptions/{subscriptionId} collection.
-     * @path /databases/{database}/documents/users/{userId}/subscriptions/{subscriptionId}
-     * @allow (create) Signed-in user creates a subscription document for themselves.
-     * @allow (get) Signed-in user reads their own subscription document.
-     * @allow (update) Signed-in user updates their own subscription document.
-     * @allow (delete) Signed-in user deletes their own subscription document.
-     * @deny (create) Signed-in user attempts to create a subscription document for another user.
-     * @deny (get) Signed-in user attempts to read another user's subscription document.
-     * @deny (update) Signed-in user attempts to update another user's subscription document.
-     * @deny (delete) Signed-in user attempts to delete another user's subscription document.
-     * @principle Enforces document ownership for all operations.
+     * @path /users/{userId}/subscriptions/{subscriptionId}
+     * @allow (create) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can create subscription for themselves.
+     * @allow (get) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can get their own subscription.
+     * @allow (update) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can update their own subscription.
+     * @allow (delete) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can delete their own subscription.
+     * @deny (create) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to create subscription for another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (get) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to get subscription of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (update) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to update subscription of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (delete) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to delete subscription of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId}/subscriptions/{subscriptionId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Security rules for the /users/{userId}/conversations/{conversationId} collection.
-     * @path /databases/{database}/documents/users/{userId}/conversations/{conversationId}
-     * @allow (create) Signed-in user creates a conversation document for themselves.
-     * @allow (get) Signed-in user reads their own conversation document.
-     * @allow (update) Signed-in user updates their own conversation document.
-     * @allow (delete) Signed-in user deletes their own conversation document.
-     * @deny (create) Signed-in user attempts to create a conversation document for another user.
-     * @deny (get) Signed-in user attempts to read another user's conversation document.
-     * @deny (update) Signed-in user attempts to update another user's conversation document.
-     * @deny (delete) Signed-in user attempts to delete another user's conversation document.
-     * @principle Enforces document ownership for all operations.
+     * @path /users/{userId}/conversations/{conversationId}
+     * @allow (create) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can create conversation for themselves.
+     * @allow (get) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can get their own conversation.
+     * @allow (update) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can update their own conversation.
+     * @allow (delete) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can delete their own conversation.
+     * @deny (create) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to create conversation for another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (get) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to get conversation of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (update) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to update conversation of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (delete) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to delete conversation of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId}/conversations/{conversationId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Security rules for the /users/{userId}/conversations/{conversationId}/messages/{messageId} collection.
-     * @path /databases/{database}/documents/users/{userId}/conversations/{conversationId}/messages/{messageId}
-     * @allow (create) Signed-in user creates a message document within their own conversation.
-     * @allow (get) Signed-in user reads their own message document.
-     * @allow (update) Signed-in user updates their own message document.
-     * @allow (delete) Signed-in user deletes their own message document.
-     * @deny (create) Signed-in user attempts to create a message document within another user's conversation.
-     * @deny (get) Signed-in user attempts to read another user's message document.
-     * @deny (update) Signed-in user attempts to update another user's message document.
-     * @deny (delete) Signed-in user attempts to delete another user's message document.
-     * @principle Enforces document ownership for all operations.
+     * @path /users/{userId}/conversations/{conversationId}/messages/{messageId}
+     * @allow (create) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can create message for themselves.
+     * @allow (get) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can get their own message.
+     * @allow (update) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can update their own message.
+     * @allow (delete) User LTu4e5YrC8NS0nBGZigGxiDhYa73 can delete their own message.
+     * @deny (create) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to create message for another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (get) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to get message of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (update) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to update message of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @deny (delete) User mQ510ZLduYhB5YdZ8RMNxW74m6T2 tries to delete message of another user LTu4e5YrC8NS0nBGZigGxiDhYa73.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId}/conversations/{conversationId}/messages/{messageId} {
       allow get: if isOwner(userId);
-      allow list: if false;
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Security rules for the /scenarios/{scenarioId} collection.
-     * @path /databases/{database}/documents/scenarios/{scenarioId}
-     * @allow (get) Any user can read scenario documents.
-     * @allow (list) Any user can list scenario documents.
-     * @deny (create) No user can create scenario documents without proper authorization.
-     * @deny (update) No user can update scenario documents without proper authorization.
-     * @deny (delete) No user can delete scenario documents without proper authorization.
-     * @principle Allows public read access to scenario data.
+     * @path /scenarios/{scenarioId}
+     * @allow (get) Any user can get a scenario.
+     * @allow (list) Any user can list scenarios.
+     * @deny (create) No user can create a scenario without specific authorization. // TODO: Add admin role for scenario creation if needed.
+     * @deny (update) No user can update a scenario without specific authorization. // TODO: Add admin role for scenario updates if needed.
+     * @deny (delete) No user can delete a scenario without specific authorization. // TODO: Add admin role for scenario deletion if needed.
+     * @principle Public read access with restricted writes.
      */
     match /scenarios/{scenarioId} {
       allow get: if true;
       allow list: if true;
-      allow create: if false;  // TODO: Add admin-only create rule if needed.
-      allow update: if false;  // TODO: Add admin-only update rule if needed.
-      allow delete: if false;  // TODO: Add admin-only delete rule if needed.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
