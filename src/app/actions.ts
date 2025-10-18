@@ -7,6 +7,7 @@ export async function generateAIResponseAction(input: GenerateAIResponseInput): 
     return output;
   } catch (error) {
     console.error("Error in generateAIResponseAction:", error);
+    // Return a valid output object in case of an error
     return { aiResponse: "Sorry, I encountered an error. Please try again." };
   }
 }

@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateAIResponseInputSchema = z.object({
+  scenarioTitle: z.string().describe('The title of the conversation scenario.'),
   conversationHistory: z.string().describe('The history of the conversation.'),
   userMessage: z.string().describe('The user message to respond to.'),
 });
@@ -49,11 +50,13 @@ const generateAIResponsePrompt = ai.definePrompt({
   name: 'generateAIResponsePrompt',
   input: {schema: GenerateAIResponseInputSchema},
   output: {schema: GenerateAIResponseOutputSchema},
-  prompt: `You are an English tutor conducting a job interview practice.
+  prompt: `You are an English tutor. Your current role is determined by the scenario title.
+Your persona should match the scenario: {{{scenarioTitle}}}.
+For example, if the scenario is 'Restaurant Ordering', you are a waiter. If it's 'Job Interview Practice', you are an interviewer.
 Analyze the student's message for grammar, pronunciation, parts of speech, and emotional tone.
 Provide a score out of 100 for grammar and pronunciation, along with any issues.
 For language analysis, identify the part of speech for each word and the overall emotion of the message.
-Then, respond naturally as an interviewer and ask follow-up questions.
+Then, respond naturally in your assigned role and ask relevant follow-up questions.
 
 Context: {{{conversationHistory}}}
 Student: {{{userMessage}}}

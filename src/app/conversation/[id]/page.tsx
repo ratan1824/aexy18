@@ -49,7 +49,7 @@ const ConversationPage: NextPage = () => {
   }, [scenarioId, aiAvatar]);
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
+    if (!content.trim() || isLoading || !scenario) return;
 
     const userMessage: Message = {
       id: String(Date.now()),
@@ -67,6 +67,7 @@ const ConversationPage: NextPage = () => {
         .join('\n');
       
       const result = await generateAIResponseAction({
+        scenarioTitle: scenario.title,
         conversationHistory: conversationHistory,
         userMessage: content,
       });
