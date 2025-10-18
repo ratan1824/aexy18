@@ -12,7 +12,7 @@ import { scenarios } from '@/lib/data';
 import { ArrowLeft, MessageSquare, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import type { User } from 'firebase/auth';
+import type { User as AuthUser } from 'firebase/auth';
 
 interface ConversationItem {
   id: string;
@@ -23,15 +23,12 @@ interface ConversationItem {
   };
 }
 
-const ConversationHistory = ({ user }: { user: User }) => {
-    const { firestore } = useFirebase();
-
+// This component is only rendered when it's safe to make Firestore queries.
+const ConversationHistory = ({ firestore, user }: { firestore: Firestore, user: AuthUser }) => {
     const conversationsQuery = useMemo(() => {
-        // This guard is crucial. It ensures we don't try to create a query
-        // until both firestore and the user are available.
-        if (!firestore || !user) return null;
+        // We can safely create the query here because firestore and user are guaranteed to be valid.
         return query(collection(firestore, 'users', user.uid, 'conversations'), orderBy('startedAt', 'desc'));
-    }, [user, firestore]);
+    }, [firestore, user.uid]);
 
     const { data: conversations, isLoading: areConversationsLoading } = useCollection<ConversationItem>(conversationsQuery);
 
@@ -60,7 +57,7 @@ const ConversationHistory = ({ user }: { user: User }) => {
                                  <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
                                     {format(date, 'PPP')}
-                                </span>
+                                 </span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -96,18 +93,20 @@ const ConversationHistory = ({ user }: { user: User }) => {
 
 const HistoryPage = () => {
   const { user: authUser, isUserLoading } = useUser();
-  const { areServicesAvailable } = useFirebase();
+  const { firestore, areServicesAvailable } = useFirebase();
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect if services are ready and there's no user.
-    if (areServicesAvailable && !isUserLoading && !authUser) {
+    // Wait until services and user loading are finished before redirecting.
+    if (!areServicesAvailable || isUserLoading) return;
+    
+    if (!authUser) {
       router.replace('/auth');
     }
   }, [authUser, isUserLoading, areServicesAvailable, router]);
 
-  // Combined loading state. We are loading if services aren't ready OR user auth state is pending.
-  const isLoading = isUserLoading || !areServicesAvailable;
+  // We are in a loading state if services aren't ready OR user is still being checked.
+  const isLoading = !areServicesAvailable || isUserLoading;
   
   return (
     <main className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -127,8 +126,9 @@ const HistoryPage = () => {
                     <Skeleton className="h-24 w-full" />
                     <Skeleton className="h-24 w-full" />
                 </div>
-            ) : authUser ? (
-                <ConversationHistory user={authUser} />
+            ) : authUser && firestore ? (
+                // Only render the component that makes DB calls when authUser and firestore are ready.
+                <ConversationHistory user={authUser} firestore={firestore} />
             ) : null}
             
         </div>
