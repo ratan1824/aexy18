@@ -35,7 +35,9 @@ import {
   signInWithEmailAndPassword,
   AuthErrorCodes
 } from "firebase/auth";
-import { createUserDocumentAction } from "@/app/actions";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 
 const formSchema = z.object({
@@ -50,7 +52,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { auth, areServicesAvailable } = useFirebase();
+  const { auth, firestore, areServicesAvailable } = useFirebase();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -125,20 +127,35 @@ export default function AuthPage() {
   };
 
   const handleSignUp = async (values: FormValues) => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const newUser = userCredential.user;
 
-      // Create a user document in Firestore via a server action
-      await createUserDocumentAction(newUser.uid, newUser.email!);
+      const userRef = doc(firestore, "users", newUser.uid);
+      const userData = {
+        email: newUser.email,
+        tier: "FREE",
+        createdAt: serverTimestamp(),
+        conversationsToday: 0,
+        streak: 0,
+      };
+
+      // Non-blocking write with contextual error handling
+      setDoc(userRef, userData).catch(error => {
+          const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'create',
+              requestResourceData: userData
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
 
       toast({
         title: "Sign Up Successful",
         description: "Your account has been created.",
       });
-      // User will be redirected by the useEffect hook
     } catch (error) {
       handleAuthError(error);
     } finally {

@@ -10,16 +10,19 @@ import { MessageInput } from '@/components/conversation/message-input';
 import { getScenario } from '@/lib/data';
 import type { Message, Scenario } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { generateAIResponseAction, createConversationAction, addMessageAction, incrementConversationsTodayAction } from '@/app/actions';
+import { generateAIResponseAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
 import { useFirebase, useUser } from '@/firebase';
+import { collection, doc, addDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const ConversationPage: NextPage = () => {
   const params = useParams();
   const router = useRouter();
   const { user: authUser, isUserLoading } = useUser();
-  const { areServicesAvailable } = useFirebase();
+  const { areServicesAvailable, firestore } = useFirebase();
   const scenarioId = Number(params.id);
 
   const [scenario, setScenario] = useState<Scenario | null>(null);
@@ -51,7 +54,7 @@ const ConversationPage: NextPage = () => {
 
   // Effect for initializing the conversation
   useEffect(() => {
-    if (!areServicesAvailable || !authUser || !scenarioId || !aiAvatar || conversationId) {
+    if (!areServicesAvailable || !authUser || !scenarioId || !aiAvatar || conversationId || !firestore) {
       return;
     }
     
@@ -59,10 +62,32 @@ const ConversationPage: NextPage = () => {
     if (currentScenario) {
       setScenario(currentScenario);
       
-      incrementConversationsTodayAction(authUser.uid);
+      const userRef = doc(firestore, 'users', authUser.uid);
+      runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+          // This will be caught by the .catch block and handled as a permission error
+          throw new Error("User document does not exist!");
+        }
+        transaction.update(userRef, { conversationsToday: increment(1) });
+      }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: { conversationsToday: 'increment(1)' }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
 
-      createConversationAction(authUser.uid, scenarioId).then(newConversationId => {
-        setConversationId(newConversationId);
+      const conversationsRef = collection(firestore, 'users', authUser.uid, 'conversations');
+      const conversationData = {
+          scenarioId,
+          userId: authUser.uid,
+          startedAt: serverTimestamp(),
+          status: 'active',
+      };
+      addDoc(conversationsRef, conversationData).then(newConversationRef => {
+        setConversationId(newConversationRef.id);
         const initialMessage: Message = {
           id: '0',
           role: 'ai',
@@ -71,15 +96,33 @@ const ConversationPage: NextPage = () => {
           avatar: aiAvatar,
         };
         setMessages([initialMessage]);
-        addMessageAction(authUser.uid, newConversationId, { role: 'ai', content: initialMessage.content });
+        
+        const messagesRef = collection(newConversationRef, 'messages');
+        const messageData = { role: 'ai', content: initialMessage.content, createdAt: serverTimestamp() };
+        addDoc(messagesRef, messageData).catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: messagesRef.path,
+                operation: 'create',
+                requestResourceData: messageData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+        
         setStartTime(new Date());
+      }).catch(error => {
+          const permissionError = new FirestorePermissionError({
+              path: conversationsRef.path,
+              operation: 'create',
+              requestResourceData: conversationData
+          });
+          errorEmitter.emit('permission-error', permissionError);
       });
     }
-  }, [scenarioId, aiAvatar, authUser, areServicesAvailable, conversationId]);
+  }, [scenarioId, aiAvatar, authUser, areServicesAvailable, conversationId, firestore]);
 
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading || !scenario || !authUser || !conversationId) return;
+    if (!content.trim() || isLoading || !scenario || !authUser || !conversationId || !firestore) return;
 
     const userMessage: Message = {
       id: String(Date.now()),
@@ -89,7 +132,18 @@ const ConversationPage: NextPage = () => {
       avatar: userAvatar,
     };
     setMessages(prev => [...prev, userMessage]);
-    addMessageAction(authUser.uid, conversationId, { role: 'user', content: userMessage.content });
+    
+    const messagesRef = collection(firestore, 'users', authUser.uid, 'conversations', conversationId, 'messages');
+    const messageData = { role: 'user', content: userMessage.content, createdAt: serverTimestamp() };
+    addDoc(messagesRef, messageData).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: messagesRef.path,
+            operation: 'create',
+            requestResourceData: messageData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+
     setIsLoading(true);
 
     try {
@@ -113,7 +167,17 @@ const ConversationPage: NextPage = () => {
           avatar: aiAvatar,
         };
         setMessages(prev => [...prev, aiMessage]);
-        addMessageAction(authUser.uid, conversationId, { role: 'ai', content: aiMessage.content, feedback: aiMessage.feedback });
+        
+        const aiMessageData = { role: 'ai', content: aiMessage.content, feedback: aiMessage.feedback, createdAt: serverTimestamp() };
+        addDoc(messagesRef, aiMessageData).catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: messagesRef.path,
+                operation: 'create',
+                requestResourceData: aiMessageData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
       } else {
         throw new Error('No AI response received.');
       }
