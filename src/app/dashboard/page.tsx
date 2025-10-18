@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -11,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScenarioCard } from '@/components/dashboard/scenario-card';
 import { UpgradeModal } from '@/components/dashboard/upgrade-modal';
 import Image from 'next/image';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
@@ -27,7 +26,9 @@ export default function DashboardPage() {
   const { data: userProfile, isLoading: isUserDataLoading } = useDoc<AppUser>(userDocRef);
 
   const [isUpgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [displayTier, setDisplayTier] = useState<AppUser['tier']>('FREE');
+  
+  // This state is purely for the tier-switching demo in the UI
+  const [displayTier, setDisplayTier] = useState<AppUser['tier'] | null>(null);
 
   // Effect to redirect if not logged in
   useEffect(() => {
@@ -35,8 +36,24 @@ export default function DashboardPage() {
       router.replace('/auth');
     }
   }, [authUser, isUserLoading, router]);
+  
+  // Effect to handle user document creation as a fallback
+  useEffect(() => {
+    if (firestore && authUser && !isUserDataLoading && !userProfile) {
+        // If user is loaded, but profile doc doesn't exist, create it.
+        const newUserDoc = {
+            id: authUser.uid,
+            email: authUser.email,
+            tier: 'FREE',
+            createdAt: serverTimestamp(),
+            conversationsToday: 0,
+            streak: 0,
+        };
+        setDoc(userDocRef!, newUserDoc);
+    }
+  }, [firestore, authUser, userDocRef, isUserDataLoading, userProfile]);
 
-  // Effect to sync display tier with loaded user profile or default
+  // Effect to sync display tier with loaded user profile
   useEffect(() => {
     if (userProfile) {
       setDisplayTier(userProfile.tier);
@@ -48,10 +65,15 @@ export default function DashboardPage() {
     setDisplayTier(newTier);
   };
   
-  const isLoading = isUserLoading || isUserDataLoading || !userProfile;
+  const isLoading = isUserLoading || isUserDataLoading || !userProfile || !displayTier;
   
   const userForDisplay = useMemo(() => {
-    return userProfile ? { ...userProfile, tier: displayTier } : getMockUserByTier(displayTier);
+    // Only build the display user object if we have a profile and a displayTier
+    if (userProfile && displayTier) {
+        return { ...userProfile, tier: displayTier };
+    }
+    // Return a default mock user for the loading state to prevent crashes
+    return getMockUserByTier('FREE');
   }, [userProfile, displayTier]);
   
   if (isLoading) {
