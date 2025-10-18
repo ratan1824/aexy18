@@ -32,36 +32,6 @@
         "email"
       ]
     },
-    "DailyUsage": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DailyUsage",
-      "type": "object",
-      "description": "Tracks daily conversation usage for a user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the daily usage record."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User. (Relationship: User 1:N DailyUsage)"
-        },
-        "date": {
-          "type": "string",
-          "description": "Date for which the usage is recorded.",
-          "format": "date"
-        },
-        "conversationsCount": {
-          "type": "number",
-          "description": "Number of conversations started by the user on this date."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "date"
-      ]
-    },
     "Subscription": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subscription",
@@ -237,26 +207,6 @@
             {
               "name": "userId",
               "description": "The unique identifier for the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/daily_usage/{dailyUsageId}",
-        "definition": {
-          "entityName": "DailyUsage",
-          "schema": {
-            "$ref": "#/backend/entities/DailyUsage"
-          },
-          "description": "Stores daily usage data for a specific user. Secured by path-based ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "dailyUsageId",
-              "description": "The unique identifier for the daily usage record."
             }
           ]
         }

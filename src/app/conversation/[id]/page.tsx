@@ -14,7 +14,7 @@ import { generateAIResponseAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
 import { useFirebase, useUser } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -54,24 +54,20 @@ const ConversationPage: NextPage = () => {
 
   // Effect for initializing the conversation
   useEffect(() => {
-    if (!areServicesAvailable || !authUser || !scenarioId || !aiAvatar || conversationId || !firestore) {
+    if (!areServicesAvailable || !authUser || !scenarioId || !firestore) {
       return;
     }
     
+    // Prevent re-initialization
+    if (conversationId) return;
+    
+    // Ensure avatars are loaded before starting
+    if (!aiAvatar) return;
+
     const currentScenario = getScenario(scenarioId);
     if (currentScenario) {
       setScenario(currentScenario);
       
-      const userRef = doc(firestore, 'users', authUser.uid);
-      updateDoc(userRef, { conversationsToday: increment(1) }).catch(error => {
-        const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'update',
-            requestResourceData: { conversationsToday: 'increment(1)' }
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
-
       const conversationsRef = collection(firestore, 'users', authUser.uid, 'conversations');
       const conversationData = {
           scenarioId,
@@ -111,7 +107,7 @@ const ConversationPage: NextPage = () => {
           errorEmitter.emit('permission-error', permissionError);
       });
     }
-  }, [scenarioId, aiAvatar, authUser, areServicesAvailable, conversationId, firestore]);
+  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, conversationId]);
 
 
   const handleSendMessage = async (content: string) => {
