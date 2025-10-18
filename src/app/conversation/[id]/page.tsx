@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -40,14 +41,16 @@ const ConversationPage: NextPage = () => {
   }, []);
 
   useEffect(() => {
+    // Wait until firebase services are available and user auth state is determined.
     if (isUserLoading || !areServicesAvailable) return;
+    
     if (!authUser) {
       router.replace('/auth');
       return;
     }
 
     const currentScenario = getScenario(scenarioId);
-    if (currentScenario && aiAvatar) {
+    if (currentScenario && aiAvatar && !conversationId) { // Ensure this runs only once
       setScenario(currentScenario);
       
       incrementConversationsTodayAction(authUser.uid);
@@ -66,7 +69,7 @@ const ConversationPage: NextPage = () => {
         setStartTime(new Date());
       });
     }
-  }, [scenarioId, aiAvatar, authUser, isUserLoading, router, areServicesAvailable]);
+  }, [scenarioId, aiAvatar, authUser, isUserLoading, areServicesAvailable, router, conversationId]);
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading || !scenario || !authUser || !conversationId) return;
