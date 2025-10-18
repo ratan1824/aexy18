@@ -15,7 +15,7 @@ export async function generateAIResponseAction(input: GenerateAIResponseInput): 
 }
 
 export async function createConversationAction(userId: string, scenarioId: number): Promise<string> {
-    const { firestore } = initializeFirebase();
+    const { firestore } = await initializeFirebase();
     const conversationsRef = collection(firestore, 'users', userId, 'conversations');
     const newConv = await addDoc(conversationsRef, {
         scenarioId,
@@ -27,7 +27,7 @@ export async function createConversationAction(userId: string, scenarioId: numbe
 }
 
 export async function addMessageAction(userId: string, conversationId: string, message: { role: 'user' | 'ai', content: string, feedback?: any }) {
-    const { firestore } = initializeFirebase();
+    const { firestore } = await initializeFirebase();
     const messagesRef = collection(firestore, 'users', userId, 'conversations', conversationId, 'messages');
     await addDoc(messagesRef, {
         ...message,
@@ -37,7 +37,7 @@ export async function addMessageAction(userId: string, conversationId: string, m
 
 
 export async function incrementConversationsTodayAction(userId: string) {
-    const { firestore } = initializeFirebase();
+    const { firestore } = await initializeFirebase();
     const userRef = doc(firestore, 'users', userId);
     
     try {
