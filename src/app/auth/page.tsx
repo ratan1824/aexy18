@@ -35,7 +35,8 @@ import {
   signInWithEmailAndPassword,
   AuthErrorCodes
 } from "firebase/auth";
-import { setDoc, doc, serverTimestamp } from "firebase/firestore";
+import { createUserDocumentAction } from "@/app/actions";
+
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -49,7 +50,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { auth, firestore, areServicesAvailable } = useFirebase();
+  const { auth, areServicesAvailable } = useFirebase();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -124,20 +125,14 @@ export default function AuthPage() {
   };
 
   const handleSignUp = async (values: FormValues) => {
-    if (!auth || !firestore) return;
+    if (!auth) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const newUser = userCredential.user;
 
-      // Create a user document in Firestore
-      await setDoc(doc(firestore, "users", newUser.uid), {
-        email: newUser.email,
-        tier: "FREE",
-        createdAt: serverTimestamp(),
-        conversationsToday: 0,
-        streak: 0,
-      });
+      // Create a user document in Firestore via a server action
+      await createUserDocumentAction(newUser.uid, newUser.email!);
 
       toast({
         title: "Sign Up Successful",

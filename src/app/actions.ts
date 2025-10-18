@@ -1,6 +1,6 @@
 'use server';
 import { generateAIResponse, GenerateAIResponseInput, GenerateAIResponseOutput } from "@/ai/flows/generate-ai-responses";
-import { getFirestore, doc, addDoc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initializeFirebase } from "@/firebase/server";
 
 export async function generateAIResponseAction(input: GenerateAIResponseInput): Promise<GenerateAIResponseOutput> {
@@ -14,13 +14,26 @@ export async function generateAIResponseAction(input: GenerateAIResponseInput): 
   }
 }
 
+export async function createUserDocumentAction(userId: string, email: string) {
+    const { firestore } = await initializeFirebase();
+    const userRef = firestore.collection('users').doc(userId);
+    await userRef.set({
+        email: email,
+        tier: "FREE",
+        createdAt: Timestamp.now(),
+        conversationsToday: 0,
+        streak: 0,
+    });
+}
+
+
 export async function createConversationAction(userId: string, scenarioId: number): Promise<string> {
     const { firestore } = await initializeFirebase();
-    const conversationsRef = collection(firestore, 'users', userId, 'conversations');
-    const newConv = await addDoc(conversationsRef, {
+    const conversationsRef = firestore.collection('users').doc(userId).collection('conversations');
+    const newConv = await conversationsRef.add({
         scenarioId,
         userId,
-        startedAt: serverTimestamp(),
+        startedAt: Timestamp.now(),
         status: 'active',
     });
     return newConv.id;
@@ -28,25 +41,25 @@ export async function createConversationAction(userId: string, scenarioId: numbe
 
 export async function addMessageAction(userId: string, conversationId: string, message: { role: 'user' | 'ai', content: string, feedback?: any }) {
     const { firestore } = await initializeFirebase();
-    const messagesRef = collection(firestore, 'users', userId, 'conversations', conversationId, 'messages');
-    await addDoc(messagesRef, {
+    const messagesRef = firestore.collection('users').doc(userId).collection('conversations').doc(conversationId).collection('messages');
+    await messagesRef.add({
         ...message,
-        createdAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
     });
 }
 
 
 export async function incrementConversationsTodayAction(userId: string) {
     const { firestore } = await initializeFirebase();
-    const userRef = doc(firestore, 'users', userId);
+    const userRef = firestore.collection('users').doc(userId);
     
     try {
-        await runTransaction(firestore, async (transaction) => {
+        await firestore.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
+            if (!userDoc.exists) {
                 throw "Document does not exist!";
             }
-            const newCount = (userDoc.data().conversationsToday || 0) + 1;
+            const newCount = (userDoc.data()?.conversationsToday || 0) + 1;
             transaction.update(userRef, { conversationsToday: newCount });
         });
     } catch (e) {
