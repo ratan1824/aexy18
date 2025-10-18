@@ -150,9 +150,11 @@ export default function AuthPage() {
       setIsLoading(false);
     }
   };
+  
+  const isPageLoading = isUserLoading || !areServicesAvailable;
 
-  if (isUserLoading || !areServicesAvailable || user) {
-    // Show a loading state while checking auth status or redirecting
+  if (isPageLoading || user) {
+    // Show a loading state while checking auth status, waiting for services, or redirecting
     return <div className="text-center">Loading...</div>
   }
 

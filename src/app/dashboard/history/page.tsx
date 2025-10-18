@@ -23,10 +23,12 @@ interface ConversationItem {
   };
 }
 
-// This component is only rendered when it's safe to make Firestore queries.
-const ConversationHistory = ({ firestore, user }: { firestore: Firestore, user: AuthUser }) => {
+const ConversationHistory = ({ user }: { user: AuthUser }) => {
+    const { firestore } = useFirebase();
+
     const conversationsQuery = useMemo(() => {
-        // We can safely create the query here because firestore and user are guaranteed to be valid.
+        // This is the key fix: only create the query if firestore is available.
+        if (!firestore) return null;
         return query(collection(firestore, 'users', user.uid, 'conversations'), orderBy('startedAt', 'desc'));
     }, [firestore, user.uid]);
 
@@ -93,7 +95,7 @@ const ConversationHistory = ({ firestore, user }: { firestore: Firestore, user: 
 
 const HistoryPage = () => {
   const { user: authUser, isUserLoading } = useUser();
-  const { firestore, areServicesAvailable } = useFirebase();
+  const { areServicesAvailable } = useFirebase();
   const router = useRouter();
 
   useEffect(() => {
@@ -126,9 +128,9 @@ const HistoryPage = () => {
                     <Skeleton className="h-24 w-full" />
                     <Skeleton className="h-24 w-full" />
                 </div>
-            ) : authUser && firestore ? (
-                // Only render the component that makes DB calls when authUser and firestore are ready.
-                <ConversationHistory user={authUser} firestore={firestore} />
+            ) : authUser ? (
+                // Only render the component that makes DB calls when authUser is ready.
+                <ConversationHistory user={authUser} />
             ) : null}
             
         </div>
