@@ -26,7 +26,7 @@ const ConversationHistory = ({ user }: { user: NonNullable<ReturnType<typeof use
     const { firestore } = useFirebase();
 
     const conversationsQuery = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         return query(collection(firestore, 'users', user.uid, 'conversations'), orderBy('startedAt', 'desc'));
     }, [user, firestore]);
 
