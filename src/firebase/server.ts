@@ -10,7 +10,7 @@ function getServiceAccount() {
 }
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
+export async function initializeFirebase() {
   const serviceAccount = getServiceAccount();
 
   if (getApps().length === 0) {
