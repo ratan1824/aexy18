@@ -15,21 +15,21 @@ export const mockUsers: { [key in User['tier']]: User } = {
     email: 'free@test.com',
     tier: 'FREE',
     conversationsToday: 2,
-    streak: 10
+    streak: 0
   },
   STANDARD: {
     id: '2',
     email: 'standard@test.com',
     tier: 'STANDARD',
     conversationsToday: 10,
-    streak: 10
+    streak: 0
   },
   PREMIUM: {
     id: '3',
     email: 'premium@test.com',
     tier: 'PREMIUM',
     conversationsToday: 50,
-    streak: 10
+    streak: 0
   }
 };
 
