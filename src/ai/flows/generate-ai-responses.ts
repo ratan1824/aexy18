@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -57,6 +58,7 @@ Analyze the student's message for grammar, pronunciation, parts of speech, and e
 Provide a score out of 100 for grammar and pronunciation, along with any issues.
 For language analysis, identify the part of speech for each word and the overall emotion of the message.
 Then, respond naturally in your assigned role and ask relevant follow-up questions.
+IMPORTANT: Aim to conclude the conversation naturally after 3-4 turns. After a few exchanges, ask a concluding question to wrap up the practice session.
 
 Context: {{{conversationHistory}}}
 Student: {{{userMessage}}}
