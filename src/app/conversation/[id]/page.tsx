@@ -14,7 +14,7 @@ import { generateAIResponseAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
 import { useFirebase, useUser } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -63,14 +63,7 @@ const ConversationPage: NextPage = () => {
       setScenario(currentScenario);
       
       const userRef = doc(firestore, 'users', authUser.uid);
-      runTransaction(firestore, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) {
-          // This will be caught by the .catch block and handled as a permission error
-          throw new Error("User document does not exist!");
-        }
-        transaction.update(userRef, { conversationsToday: increment(1) });
-      }).catch(error => {
+      updateDoc(userRef, { conversationsToday: increment(1) }).catch(error => {
         const permissionError = new FirestorePermissionError({
             path: userRef.path,
             operation: 'update',
