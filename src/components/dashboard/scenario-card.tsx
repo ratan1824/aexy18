@@ -37,8 +37,8 @@ export function ScenarioCard({ scenario, user, onOpenUpgradeModal }: ScenarioCar
 
   return (
     <Card className={cn(
-      "group flex flex-col overflow-hidden transition-all duration-300 ease-in-out h-full bg-secondary border-muted hover:border-primary",
-      isDisabled && "opacity-60"
+      "group flex flex-col overflow-hidden transition-all duration-300 ease-in-out h-full glassmorphic shadow-2xl shadow-primary/5 hover:shadow-primary/20 hover:-translate-y-1",
+      isDisabled && "opacity-60 grayscale"
       )}>
       <CardHeader className="p-0">
         <div className="relative h-48 w-full">
@@ -49,6 +49,7 @@ export function ScenarioCard({ scenario, user, onOpenUpgradeModal }: ScenarioCar
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             data-ai-hint={scenario.image.hint}
           />
+           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         </div>
       </CardHeader>
       <CardContent className="p-6 flex-grow flex flex-col">
@@ -68,8 +69,8 @@ export function ScenarioCard({ scenario, user, onOpenUpgradeModal }: ScenarioCar
           asChild={!isDisabled}
           disabled={isDisabled}
           onClick={handleButtonClick}
-          className="w-full text-lg py-6 bg-primary/10 text-primary border-2 border-primary/20 hover:bg-primary hover:text-primary-foreground"
-          variant={'ghost'}
+          className="w-full text-lg py-6"
+          variant={isLockedForTier ? 'secondary' : 'default'}
         >
           {isLockedForTier ? (
             <div className="flex items-center">

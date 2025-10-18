@@ -157,101 +157,103 @@ export default function AuthPage() {
   }
 
   return (
-    <Tabs defaultValue="login" className="w-full max-w-sm">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="login">Login</TabsTrigger>
-        <TabsTrigger value="signup">Sign Up</TabsTrigger>
-      </TabsList>
-      <TabsContent value="login">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Login</CardTitle>
-            <CardDescription>
-              Access your account to continue your practice.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing In..." : "Sign In"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      <TabsContent value="signup">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Sign Up</CardTitle>
-            <CardDescription>
-              Create an account to start your English learning journey.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                   {isLoading ? "Creating Account..." : "Create Account"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+    <div className="w-full max-w-md mx-auto">
+      <Tabs defaultValue="login" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        </TabsList>
+        <TabsContent value="login">
+          <Card className="glassmorphic shadow-2xl shadow-primary/10">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl">Login</CardTitle>
+              <CardDescription>
+                Access your account to continue your practice.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Signing In..." : "Sign In"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="signup">
+          <Card className="glassmorphic shadow-2xl shadow-primary/10">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl">Sign Up</CardTitle>
+              <CardDescription>
+                Create an account to start your English learning journey.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Creating Account..." : "Create Account"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

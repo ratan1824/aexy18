@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "job-interview-office",
-      "description": "A professional setting for a job interview with two people talking.",
-      "imageUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwcm9mZXNzaW9uYWwlMjBpbnRlcnZpZXd8ZW58MHx8fHwxNzYwNzM0MTQ4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "professional interview"
+      "description": "A modern and bright office space with two people in a discussion.",
+      "imageUrl": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxidXNpbmVzcyUyMG1lZXRpbmd8ZW58MHx8fHwxNzYwNzM0MTQ4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business meeting"
     },
     {
       "id": "ordering-food-cafe",
@@ -29,6 +29,12 @@
       "description": "Avatar for the AI.",
       "imageUrl": "https://images.unsplash.com/photo-1683322001857-f4d932a40672?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxyb2JvdCUyMGZhY2V8ZW58MHx8fHwxNzYwNzM0MTQ2fDA&ixlibrb-4.1.0&q=80&w=1080",
       "imageHint": "robot face"
+    },
+    {
+      "id": "abstract-header",
+      "description": "Abstract 3D shapes with neon green and dark colors.",
+      "imageUrl": "https://images.unsplash.com/photo-1628744448847-1a06a5371a74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhYnN0cmFjdCUyMGdyZWVuJTIwM2R8ZW58MHx8fHwxNzA4NDYwMjYyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract green"
     }
   ]
 }

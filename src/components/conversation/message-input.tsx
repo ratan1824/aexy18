@@ -125,7 +125,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   }, [content]);
 
   return (
-    <div className="p-4 border-t bg-card shrink-0">
+    <div className="p-4 border-t bg-background/80 backdrop-blur-sm shrink-0">
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <Button 
@@ -134,7 +134,10 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
             type="button" 
             onClick={handleToggleRecording}
             disabled={isLoading} 
-            className={cn("shrink-0", isRecording && "text-red-500 hover:text-red-600")}
+            className={cn(
+                "shrink-0 text-muted-foreground hover:text-foreground", 
+                isRecording && "text-primary hover:text-primary/90"
+            )}
           >
             {isRecording ? <Square /> : <Mic />}
             <span className="sr-only">{isRecording ? 'Stop recording' : 'Use microphone'}</span>
@@ -150,7 +153,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
               }
             }}
             placeholder={isRecording ? "Listening..." : "Type or speak..."}
-            className="resize-none max-h-36"
+            className="resize-none max-h-36 bg-secondary border-muted focus-visible:ring-primary"
             rows={1}
             disabled={isLoading}
           />

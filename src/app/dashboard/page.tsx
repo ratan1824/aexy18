@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScenarioCard } from '@/components/dashboard/scenario-card';
 import { UpgradeModal } from '@/components/dashboard/upgrade-modal';
+import Image from 'next/image';
 
 export default function DashboardPage() {
   const { user: authUser, isUserLoading } = useUser();
@@ -20,8 +21,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isUserLoading) {
       if (authUser) {
-        // In a real app, you'd fetch this from Firestore.
-        // For now, we'll use a mock user.
         setUserProfile(getMockUserByTier('PREMIUM'));
       } else {
         router.replace('/auth');
@@ -37,7 +36,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background text-foreground">
         <main className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <Skeleton className="h-10 w-1/2 mb-2" />
@@ -62,12 +61,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <main className="container mx-auto px-4 py-8 animate-in fade-in-0 duration-500">
         <DashboardHeader user={userProfile} onTierChange={handleTierChange} />
         <section className="py-12">
-          <h2 className="text-3xl font-bold font-headline mb-8 text-center text-foreground">Practice Scenarios</h2>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold font-headline mb-8 text-center">Practice Scenarios</h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {scenarios.map((scenario) => (
                 <ScenarioCard
                   key={scenario.id}

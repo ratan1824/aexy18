@@ -144,7 +144,9 @@ const ConversationPage: NextPage = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <ConversationHeader title={scenario.title} onEndConversation={handleEndConversation} />
-      <MessageList messages={messages} isLoading={isLoading} aiAvatar={aiAvatar} />
+      <div className="flex-1 overflow-y-auto">
+        <MessageList messages={messages} isLoading={isLoading} aiAvatar={aiAvatar} />
+      </div>
       <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
       {isEnded && conversationSummary && <ConversationSummary summary={conversationSummary} />}
     </div>

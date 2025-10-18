@@ -65,7 +65,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const hasFeedback = !isUser && message.feedback && (message.feedback.grammar || message.feedback.pronunciation || message.feedback.language);
 
   return (
-    <div className={cn('flex items-end gap-2', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex items-end gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <Avatar className="h-8 w-8 self-start shrink-0">
           <AvatarImage src={message.avatar} alt="AI Avatar" />
@@ -73,11 +73,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </Avatar>
       )}
       <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
-          <Card className={cn('max-w-md lg:max-w-lg rounded-2xl shadow-md', isUser ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card rounded-bl-none')}>
-            <CardContent className="p-3">
+          <div className={cn(
+              'max-w-md lg:max-w-lg rounded-2xl p-3 shadow-md', 
+              isUser 
+                ? 'bg-primary text-primary-foreground rounded-br-none' 
+                : 'bg-secondary text-secondary-foreground rounded-bl-none'
+            )}>
               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-            </CardContent>
-          </Card>
+          </div>
           <div className="flex items-center gap-2 px-1">
             <span className="text-xs text-muted-foreground">{format(new Date(message.timestamp), 'p')}</span>
             {hasFeedback && (
@@ -86,7 +89,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
                   </TooltipTrigger>
-                  <TooltipContent className="bg-secondary text-secondary-foreground w-64">
+                  <TooltipContent className="bg-background border-border text-foreground w-64 shadow-2xl">
                     <div className="space-y-3 p-2">
                       {message.feedback?.grammar && <FeedbackItem title="Grammar" {...message.feedback.grammar} />}
                       {message.feedback?.pronunciation && <FeedbackItem title="Pronunciation" {...message.feedback.pronunciation} />}
