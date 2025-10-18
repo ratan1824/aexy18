@@ -1,7 +1,7 @@
 'use server';
 import { generateAIResponse, GenerateAIResponseInput, GenerateAIResponseOutput } from "@/ai/flows/generate-ai-responses";
 import { getFirestore, doc, addDoc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
-import { initializeFirebase } from "@/firebase/server"; // Using server-side initialization
+import { initializeFirebase } from "@/firebase/server";
 
 export async function generateAIResponseAction(input: GenerateAIResponseInput): Promise<GenerateAIResponseOutput> {
   try {
