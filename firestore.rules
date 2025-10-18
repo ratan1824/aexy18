@@ -1,151 +1,16 @@
-/**
- * @file Firestore Security Rules for Aexy English Learning App
- * @version Prototyping
- *
- * @Core Philosophy:
- *   This ruleset enforces a strict user-ownership model for user-specific data and allows public read access to scenarios. It prioritizes security by ensuring that users can only access data directly associated with their authenticated user ID.  Write access is generally restricted to the owner, except for the Scenarios collection, which lacks owner validation and would need to be secured separately in a production environment. Data shape validation is minimal for rapid prototyping.
- *
- * @Data Structure:
- *   Data is organized hierarchically under the `/users/{userId}` path, with subcollections for daily usage, subscriptions, conversations, and messages. Scenarios are stored in a top-level `/scenarios` collection, intended for public read access.
- *
- * @Key Security Decisions:
- *   - User listing is implicitly denied.
- *   - Public read access is granted for the `/scenarios` collection.
- *   - Data shape validation is relaxed for faster prototyping but MUST be tightened in production.
- *
- * @Denormalization for Authorization:
- *   N/A - This ruleset relies on path-based authorization and does not currently require denormalization.  If roles or shared access are introduced, denormalization would be required.
- *
- * @Structural Segregation:
- *   User-specific data is segregated under the `/users/{userId}` path, while public data resides in the top-level `/scenarios` collection. This simplifies access control and improves security.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Secure user profiles, ensuring only the authenticated user can access their own profile.
-     * @path /users/{userId}
-     * @allow (create) - Authenticated user with matching userId.
-     * @allow (get, update, delete) - Authenticated user with matching userId.
-     * @deny (create, get, update, delete) - Any other user.
-     * @principle Enforces document ownership for all read and write operations.
-     */
-    match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secure daily usage data, ensuring only the authenticated user can access their own usage records.
-     * @path /users/{userId}/daily_usage/{dailyUsageId}
-     * @allow (create) - Authenticated user with matching userId.
-     * @allow (get, update, delete) - Authenticated user with matching userId.
-     * @deny (create, get, update, delete) - Any other user.
-     * @principle Enforces document ownership for all read and write operations.
-     */
-    match /users/{userId}/daily_usage/{dailyUsageId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secure subscription data, ensuring only the authenticated user can access their own subscription information.
-     * @path /users/{userId}/subscriptions/{subscriptionId}
-     * @allow (create) - Authenticated user with matching userId.
-     * @allow (get, update, delete) - Authenticated user with matching userId.
-     * @deny (create, get, update, delete) - Any other user.
-     * @principle Enforces document ownership for all read and write operations.
-     */
-    match /users/{userId}/subscriptions/{subscriptionId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secure conversation data, ensuring only the authenticated user can access their own conversations.
-     * @path /users/{userId}/conversations/{conversationId}
-     * @allow (create) - Authenticated user with matching userId.
-     * @allow (get, update, delete) - Authenticated user with matching userId.
-     * @deny (create, get, update, delete) - Any other user.
-     * @principle Enforces document ownership for all read and write operations.
-     */
-    match /users/{userId}/conversations/{conversationId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secure message data, ensuring only the authenticated user can access messages within their own conversations.
-     * @path /users/{userId}/conversations/{conversationId}/messages/{messageId}
-     * @allow (create) - Authenticated user with matching userId.
-     * @allow (get, update, delete) - Authenticated user with matching userId.
-     * @deny (create, get, update, delete) - Any other user.
-     * @principle Enforces document ownership for all read and write operations.
-     */
-    match /users/{userId}/conversations/{conversationId}/messages/{messageId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Allow public read access to scenarios. Write access should be restricted to admins (TODO).
-     * @path /scenarios/{scenarioId}
-     * @allow (get, list) - Any user (publicly readable).
-     * @deny (create, update, delete) - All users (requires admin authentication - TODO).
-     * @principle Grants public read access while restricting writes to authorized admins.
-     */
+    // Scenarios are public to all users
     match /scenarios/{scenarioId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false;  // TODO: Add admin validation once admin roles are defined.
-      allow update: if false;  // TODO: Add admin validation once admin roles are defined.
-      allow delete: if false;  // TODO: Add admin validation once admin roles are defined.
+      allow read: if true;
+      allow write: if false; // Scenarios are read-only
+    }
+
+    // Users can only read and write to their own documents and subcollections
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

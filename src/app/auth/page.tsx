@@ -135,6 +135,7 @@ export default function AuthPage() {
 
       const userRef = doc(firestore, "users", newUser.uid);
       const userData = {
+        id: newUser.uid,
         email: newUser.email,
         tier: "FREE",
         createdAt: serverTimestamp(),
