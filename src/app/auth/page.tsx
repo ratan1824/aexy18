@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useUser, useFirestore } from "@/firebase";
+import { useFirebase, useUser } from "@/firebase";
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -50,8 +50,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
