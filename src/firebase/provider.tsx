@@ -36,7 +36,7 @@ export interface FirebaseContextState {
 export interface FirebaseServicesAndUser extends FirebaseContextState {}
 
 // Return type for useUser() - specific to user auth state
-export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
+export interface UserHookResult { 
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -59,6 +59,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true, // Start loading until first auth event
     userError: null,
   });
+
+  const areServicesAvailable = !!(firebaseApp && firestore && auth);
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
@@ -84,17 +86,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
-    const servicesAvailable = !!(firebaseApp && firestore && auth);
     return {
-      areServicesAvailable: servicesAvailable,
-      firebaseApp: servicesAvailable ? firebaseApp : null,
-      firestore: servicesAvailable ? firestore : null,
-      auth: servicesAvailable ? auth : null,
+      areServicesAvailable,
+      firebaseApp: areServicesAvailable ? firebaseApp : null,
+      firestore: areServicesAvailable ? firestore : null,
+      auth: areServicesAvailable ? auth : null,
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  }, [firebaseApp, firestore, auth, userAuthState, areServicesAvailable]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
