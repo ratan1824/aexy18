@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUser, useCollection, useFirestore, useFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,13 +23,13 @@ interface ConversationItem {
 
 const HistoryPage = () => {
   const { user: authUser, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { firestore, areServicesAvailable } = useFirebase();
   const router = useRouter();
 
   const conversationsQuery = useMemo(() => {
-    if (!authUser || !firestore) return null;
+    if (!areServicesAvailable || !authUser || !firestore) return null;
     return query(collection(firestore, 'users', authUser.uid, 'conversations'), orderBy('startedAt', 'desc'));
-  }, [authUser, firestore]);
+  }, [authUser, firestore, areServicesAvailable]);
 
   const { data: conversations, isLoading: areConversationsLoading } = useCollection<ConversationItem>(conversationsQuery);
 
@@ -39,7 +39,7 @@ const HistoryPage = () => {
     }
   }, [authUser, isUserLoading, router]);
 
-  const isLoading = isUserLoading || areConversationsLoading || !firestore;
+  const isLoading = isUserLoading || !areServicesAvailable || areConversationsLoading;
 
   if (isLoading) {
     return (
