@@ -11,15 +11,15 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // useMemo ensures that Firebase is initialized only once on the client-side,
   // preventing re-initializations on re-renders.
-  const firebaseServices = useMemo(() => {
+  const { firebaseApp, auth, firestore } = useMemo(() => {
     return initializeFirebase();
   }, []);
 
   return (
     <FirebaseProvider
-      firebaseApp={firebaseServices.firebaseApp}
-      auth={firebaseServices.auth}
-      firestore={firebaseServices.firestore}
+      firebaseApp={firebaseApp}
+      auth={auth}
+      firestore={firestore}
     >
       {children}
     </FirebaseProvider>

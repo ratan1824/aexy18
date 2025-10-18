@@ -12,12 +12,13 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { generateAIResponseAction, createConversationAction, addMessageAction, incrementConversationsTodayAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
-import { useUser } from '@/firebase';
+import { useFirebase, useUser } from '@/firebase';
 
 const ConversationPage: NextPage = () => {
   const params = useParams();
   const router = useRouter();
   const { user: authUser, isUserLoading } = useUser();
+  const { areServicesAvailable } = useFirebase();
   const scenarioId = Number(params.id);
 
   const [scenario, setScenario] = useState<Scenario | null>(null);
@@ -39,7 +40,7 @@ const ConversationPage: NextPage = () => {
   }, []);
 
   useEffect(() => {
-    if (isUserLoading) return;
+    if (isUserLoading || !areServicesAvailable) return;
     if (!authUser) {
       router.replace('/auth');
       return;
@@ -65,7 +66,7 @@ const ConversationPage: NextPage = () => {
         setStartTime(new Date());
       });
     }
-  }, [scenarioId, aiAvatar, authUser, isUserLoading, router]);
+  }, [scenarioId, aiAvatar, authUser, isUserLoading, router, areServicesAvailable]);
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading || !scenario || !authUser || !conversationId) return;
@@ -159,7 +160,7 @@ const ConversationPage: NextPage = () => {
     setIsEnded(true);
   };
   
-  if (isUserLoading || !scenario) {
+  if (isUserLoading || !areServicesAvailable || !scenario) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
