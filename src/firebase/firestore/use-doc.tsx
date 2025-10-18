@@ -48,9 +48,8 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // If the reference is not provided, reset state and do nothing.
     if (!docRef) {
-      // If the ref is null/undefined (e.g., user is logging out or ID is not ready),
-      // we are not technically "loading" a document, so set loading to false.
       setIsLoading(false);
       setData(null);
       setError(null);
