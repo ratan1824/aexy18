@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, type Firestore } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { scenarios } from '@/lib/data';
@@ -27,6 +27,8 @@ const ConversationHistory = ({ user }: { user: User }) => {
     const { firestore } = useFirebase();
 
     const conversationsQuery = useMemo(() => {
+        // This guard is crucial. It ensures we don't try to create a query
+        // until both firestore and the user are available.
         if (!firestore || !user) return null;
         return query(collection(firestore, 'users', user.uid, 'conversations'), orderBy('startedAt', 'desc'));
     }, [user, firestore]);
@@ -98,11 +100,13 @@ const HistoryPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isUserLoading && !authUser && areServicesAvailable) {
+    // Redirect if services are ready and there's no user.
+    if (areServicesAvailable && !isUserLoading && !authUser) {
       router.replace('/auth');
     }
-  }, [authUser, isUserLoading, router, areServicesAvailable]);
+  }, [authUser, isUserLoading, areServicesAvailable, router]);
 
+  // Combined loading state. We are loading if services aren't ready OR user auth state is pending.
   const isLoading = isUserLoading || !areServicesAvailable;
   
   return (
