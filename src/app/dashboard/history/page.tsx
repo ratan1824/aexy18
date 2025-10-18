@@ -27,9 +27,9 @@ const ConversationHistory = ({ user }: { user: User }) => {
     const { firestore } = useFirebase();
 
     const conversationsQuery = useMemo(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null;
         return query(collection(firestore, 'users', user.uid, 'conversations'), orderBy('startedAt', 'desc'));
-    }, [user.uid, firestore]);
+    }, [user, firestore]);
 
     const { data: conversations, isLoading: areConversationsLoading } = useCollection<ConversationItem>(conversationsQuery);
 

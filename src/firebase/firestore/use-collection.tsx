@@ -62,7 +62,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // If the reference is not provided, reset state and do nothing.
+    // If the reference is not provided, reset state and do nothing. This is a crucial guard.
     if (!targetRefOrQuery) {
       setData(null);
       setIsLoading(false);
