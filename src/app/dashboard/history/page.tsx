@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useCollection, useFirestore, useFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useCollection, useFirebase } from '@/firebase';
+import { collection, query, orderBy, Query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { scenarios } from '@/lib/data';
@@ -31,13 +31,13 @@ const HistoryPage = () => {
     return query(collection(firestore, 'users', authUser.uid, 'conversations'), orderBy('startedAt', 'desc'));
   }, [authUser, firestore, areServicesAvailable]);
 
-  const { data: conversations, isLoading: areConversationsLoading } = useCollection<ConversationItem>(conversationsQuery);
+  const { data: conversations, isLoading: areConversationsLoading } = useCollection<ConversationItem>(conversationsQuery as Query | null);
 
   useEffect(() => {
-    if (!isUserLoading && !authUser) {
+    if (!isUserLoading && !authUser && areServicesAvailable) {
       router.replace('/auth');
     }
-  }, [authUser, isUserLoading, router]);
+  }, [authUser, isUserLoading, router, areServicesAvailable]);
 
   const isLoading = isUserLoading || !areServicesAvailable || areConversationsLoading;
 

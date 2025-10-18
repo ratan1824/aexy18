@@ -49,7 +49,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { auth, firestore } = useFirebase();
+  const { auth, firestore, areServicesAvailable } = useFirebase();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -151,7 +151,7 @@ export default function AuthPage() {
     }
   };
 
-  if (isUserLoading || user || !auth) {
+  if (isUserLoading || !areServicesAvailable || user) {
     // Show a loading state while checking auth status or redirecting
     return <div className="text-center">Loading...</div>
   }

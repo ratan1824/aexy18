@@ -33,15 +33,7 @@ export interface FirebaseContextState {
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser {
-  areServicesAvailable: boolean;
-  firebaseApp: FirebaseApp | null;
-  firestore: Firestore | null;
-  auth: Auth | null;
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
-}
+export interface FirebaseServicesAndUser extends FirebaseContextState {}
 
 // Return type for useUser() - specific to user auth state
 export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
@@ -122,16 +114,8 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
-
-  return {
-    areServicesAvailable: context.areServicesAvailable,
-    firebaseApp: context.firebaseApp,
-    firestore: context.firestore,
-    auth: context.auth,
-    user: context.user,
-    isUserLoading: context.isUserLoading,
-    userError: context.userError,
-  };
+  
+  return context;
 };
 
 /** Hook to access Firebase Auth instance. Returns null if not available. */
