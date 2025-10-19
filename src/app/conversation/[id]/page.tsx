@@ -14,7 +14,7 @@ import { generateAIResponseAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ConversationSummary, SummaryProps } from '@/components/conversation/summary-card';
 import { useFirebase, useUser } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -101,6 +101,18 @@ const ConversationPage: NextPage = () => {
               requestResourceData: messageData
           });
           errorEmitter.emit('permission-error', permissionError);
+      });
+
+      // Increment the user's conversation count for the day
+      const userRef = doc(firestore, 'users', authUser.uid);
+      const updateData = { conversationsToday: increment(1) };
+      updateDoc(userRef, updateData).catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
       
       setStartTime(new Date());
