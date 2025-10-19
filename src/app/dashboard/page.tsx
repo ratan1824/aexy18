@@ -9,7 +9,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScenarioCard } from '@/components/dashboard/scenario-card';
 import { UpgradeModal } from '@/components/dashboard/upgrade-modal';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
