@@ -31,6 +31,7 @@ const ConversationPage: NextPage = () => {
   const [isEnded, setIsEnded] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<SummaryProps | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false); // Lock to prevent multiple initializations
   
   const { toast } = useToast();
   
@@ -50,13 +51,12 @@ const ConversationPage: NextPage = () => {
 
   // Effect for initializing the conversation
   useEffect(() => {
-    // Guards to ensure all dependencies are ready
-    if (!areServicesAvailable || !authUser || !scenarioId || !firestore || !aiAvatar) {
+    // Guards to ensure all dependencies are ready and initialization hasn't already started
+    if (!areServicesAvailable || !authUser || !scenarioId || !firestore || !aiAvatar || isInitializing) {
       return;
     }
     
-    // Prevent re-initialization if a conversation is already in progress
-    if (conversationId) return;
+    setIsInitializing(true); // Acquire lock
 
     const currentScenario = getScenario(scenarioId);
     if (!currentScenario) {
@@ -126,7 +126,7 @@ const ConversationPage: NextPage = () => {
         errorEmitter.emit('permission-error', permissionError);
     });
 
-  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, router, toast, conversationId]); // conversationId prevents re-runs
+  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, router, toast, isInitializing]);
 
 
   const handleSendMessage = async (content: string) => {
@@ -260,3 +260,5 @@ const ConversationPage: NextPage = () => {
 };
 
 export default ConversationPage;
+
+    
