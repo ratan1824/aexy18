@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { NextPage } from 'next';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationHeader } from '@/components/conversation/header';
@@ -31,7 +31,7 @@ const ConversationPage: NextPage = () => {
   const [isEnded, setIsEnded] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<SummaryProps | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(false); // Lock to prevent multiple initializations
+  const initHasRun = useRef(false); // Ref to prevent double-execution
   
   const { toast } = useToast();
   
@@ -51,12 +51,17 @@ const ConversationPage: NextPage = () => {
 
   // Effect for initializing the conversation
   useEffect(() => {
-    // Guards to ensure all dependencies are ready and initialization hasn't already started
-    if (!areServicesAvailable || !authUser || !scenarioId || !firestore || !aiAvatar || isInitializing) {
+    // Guards to ensure all dependencies are ready
+    if (!areServicesAvailable || !authUser || !scenarioId || !firestore || !aiAvatar) {
       return;
     }
+
+    // This check ensures the initialization logic runs only once
+    if (initHasRun.current) {
+        return;
+    }
+    initHasRun.current = true;
     
-    setIsInitializing(true); // Acquire lock
 
     const currentScenario = getScenario(scenarioId);
     if (!currentScenario) {
@@ -126,7 +131,7 @@ const ConversationPage: NextPage = () => {
         errorEmitter.emit('permission-error', permissionError);
     });
 
-  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, router, toast, isInitializing]);
+  }, [scenarioId, authUser, areServicesAvailable, firestore, aiAvatar, router, toast]);
 
 
   const handleSendMessage = async (content: string) => {
@@ -260,5 +265,3 @@ const ConversationPage: NextPage = () => {
 };
 
 export default ConversationPage;
-
-    

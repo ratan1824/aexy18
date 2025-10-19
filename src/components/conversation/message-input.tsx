@@ -22,54 +22,11 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
-
-  const stopRecording = useCallback(() => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      // onend will handle setting isRecording to false
-    }
-  }, [isRecording]);
-  
-  const startRecording = useCallback(async () => {
-    if (!SpeechRecognition) {
-      toast({
-        variant: "destructive",
-        title: "Browser Not Supported",
-        description: "Your browser doesn't support speech recognition. Try Chrome or Firefox.",
-      });
-      return;
-    }
-
-    if (!recognitionRef.current) {
-        toast({
-            variant: "destructive",
-            title: "Initialization Error",
-            description: "Speech recognition service could not be started. Please refresh the page.",
-        });
-        return;
-    }
-
-    try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        recognitionRef.current.start();
-        setIsRecording(true);
-    } catch (err: any) {
-        let description = "Could not access the microphone. Please ensure you have granted permission.";
-        if (err.name === 'NotAllowedError') {
-             description = "Microphone access was denied. Please enable it in your browser settings to use voice input.";
-        }
-        toast({
-            variant: "destructive",
-            title: "Microphone Access Denied",
-            description: description,
-        });
-        setIsRecording(false);
-    }
-  }, [toast]);
-
+  const initMicHasRun = useRef(false);
 
   useEffect(() => {
-    if (!SpeechRecognition) return;
+    if (initMicHasRun.current || !SpeechRecognition) return;
+    initMicHasRun.current = true;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -97,6 +54,8 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
+      // 'aborted' is a common error when the mic is stopped manually.
+      // 'no-speech' is when the user stops talking. We don't need to show errors for these.
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
           toast({
               variant: "destructive",
@@ -104,7 +63,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
               description: `An error occurred: ${event.error}`,
           });
       }
-      // onend will be called subsequently, which will set isRecording to false
+      setIsRecording(false);
     };
 
     recognitionRef.current = recognition;
@@ -114,20 +73,53 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     };
   }, [toast]);
 
-
-  const handleToggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
+  const handleToggleRecording = useCallback(async () => {
+    if (!SpeechRecognition) {
+      toast({
+        variant: "destructive",
+        title: "Browser Not Supported",
+        description: "Your browser doesn't support speech recognition. Try Chrome or Firefox.",
+      });
+      return;
     }
-  };
+    
+    if (!recognitionRef.current) {
+        toast({
+            variant: "destructive",
+            title: "Initialization Error",
+            description: "Speech recognition service could not be started. Please refresh the page.",
+        });
+        return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        // Request microphone permission. This is necessary for some browsers.
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        recognitionRef.current.start();
+        setIsRecording(true);
+      } catch (err: any) {
+        let description = "Could not access the microphone. Please ensure you have granted permission.";
+        if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+             description = "Microphone access was denied. Please enable it in your browser settings to use voice input.";
+        }
+        toast({
+            variant: "destructive",
+            title: "Microphone Access Denied",
+            description: description,
+        });
+        setIsRecording(false);
+      }
+    }
+  }, [isRecording, toast]);
 
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (isRecording) {
-        stopRecording();
+    if (isRecording && recognitionRef.current) {
+        recognitionRef.current.stop();
     }
     if (content.trim()) {
       onSendMessage(content);
