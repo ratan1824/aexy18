@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   // This purely simulates tier changes on the client for the demo.
   const handleTierChange = (newTier: AppUser['tier']) => {
     if (userDocRef) {
-        updateDoc(userDocRef, { tier: newTier });
+        updateDoc(userDocRef, { tier: newTier, conversationsToday: 0 });
     }
   };
   
