@@ -54,14 +54,23 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
         toast({
             variant: "destructive",
             title: "Microphone Access Denied",
-            description: "Please enable microphone permissions in your browser settings to use the voice input feature.",
+            description: "Aexy needs microphone access for voice input. Please enable it in your browser settings.",
         });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Voice Error",
+          description: `An error occurred: ${event.error}. Please try again.`,
+      });
       }
       setIsRecording(false);
     };
     
     recognition.onend = () => {
-        setIsRecording(false);
+        // Ensure recording state is always turned off when recognition ends.
+        if (isRecording) {
+            setIsRecording(false);
+        }
     };
 
     recognitionRef.current = recognition;
@@ -69,6 +78,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     return () => {
       recognition.stop();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
 
@@ -77,27 +87,40 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
         toast({
             variant: "destructive",
             title: "Browser Not Supported",
-            description: "Your browser doesn't support speech recognition. Try Chrome or Firefox.",
+            description: "Your browser doesn't support speech recognition. Try Chrome or Safari.",
         });
         return;
     }
 
     if (isRecording) {
       recognitionRef.current?.stop();
+      setIsRecording(false);
     } else {
        try {
-        // Request microphone permission
+        // First, ensure microphone access is granted before starting recognition.
+        // This is crucial for handling permissions explicitly.
         await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // If permission is granted, start recognition.
         finalTranscriptRef.current = content; // Start with current text
         recognitionRef.current?.start();
         setIsRecording(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error accessing microphone:', error);
-        toast({
-            variant: "destructive",
-            title: "Microphone Access Denied",
-            description: "Could not access the microphone. Please ensure you have granted permission.",
-        });
+        // This catch block handles cases where getUserMedia itself fails.
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            toast({
+                variant: "destructive",
+                title: "Microphone Access Denied",
+                description: "Aexy needs microphone access for voice input. Please enable it in your browser settings.",
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Microphone Error",
+                description: "Could not access the microphone. Please ensure it is connected and permissions are granted.",
+            });
+        }
       }
     }
   };
@@ -107,6 +130,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     e?.preventDefault();
     if (isRecording) {
         recognitionRef.current?.stop();
+        setIsRecording(false);
     }
     if (content.trim()) {
       onSendMessage(content);
@@ -136,7 +160,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
             disabled={isLoading} 
             className={cn(
                 "shrink-0 text-muted-foreground hover:text-foreground", 
-                isRecording && "text-primary hover:text-primary/90"
+                isRecording && "text-primary hover:text-primary/90 animate-pulse"
             )}
           >
             {isRecording ? <Square /> : <Mic />}
