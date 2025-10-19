@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Send, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,55 +13,98 @@ interface MessageInputProps {
   isLoading: boolean;
 }
 
-// Check for SpeechRecognition API
 const SpeechRecognition =
-  (typeof window !== 'undefined' && window.SpeechRecognition) ||
-  (typeof window !== 'undefined' && window.webkitSpeechRecognition);
+  (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition));
 
 export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const finalTranscriptRef = useRef<string>('');
   const { toast } = useToast();
 
-  useEffect(() => {
+  const stopRecording = useCallback(() => {
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop();
+      // onend will handle setting isRecording to false
+    }
+  }, [isRecording]);
+  
+  const startRecording = useCallback(async () => {
     if (!SpeechRecognition) {
+      toast({
+        variant: "destructive",
+        title: "Browser Not Supported",
+        description: "Your browser doesn't support speech recognition. Try Chrome or Firefox.",
+      });
       return;
     }
+
+    if (!recognitionRef.current) {
+        toast({
+            variant: "destructive",
+            title: "Initialization Error",
+            description: "Speech recognition service could not be started. Please refresh the page.",
+        });
+        return;
+    }
+
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        recognitionRef.current.start();
+        setIsRecording(true);
+    } catch (err: any) {
+        let description = "Could not access the microphone. Please ensure you have granted permission.";
+        if (err.name === 'NotAllowedError') {
+             description = "Microphone access was denied. Please enable it in your browser settings to use voice input.";
+        }
+        toast({
+            variant: "destructive",
+            title: "Microphone Access Denied",
+            description: description,
+        });
+        setIsRecording(false);
+    }
+  }, [toast]);
+
+
+  useEffect(() => {
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
+    let finalTranscript = '';
+
     recognition.onresult = (event) => {
       let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscriptRef.current += event.results[i][0].transcript;
+          finalTranscript += event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      setContent(finalTranscriptRef.current + interimTranscript);
+      setContent(finalTranscript + interimTranscript);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      finalTranscript = ''; // Reset transcript for next session
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error', event.error);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        toast({
-            variant: "destructive",
-            title: "Microphone Access Denied",
-            description: "Please enable microphone permissions in your browser settings to use the voice input feature.",
-        });
+      console.error('Speech recognition error:', event.error);
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          toast({
+              variant: "destructive",
+              title: "Voice Error",
+              description: `An error occurred: ${event.error}`,
+          });
       }
-      setIsRecording(false);
-    };
-    
-    recognition.onend = () => {
-        setIsRecording(false);
+      // onend will be called subsequently, which will set isRecording to false
     };
 
     recognitionRef.current = recognition;
@@ -72,33 +115,11 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   }, [toast]);
 
 
-  const handleToggleRecording = async () => {
-    if (!SpeechRecognition) {
-        toast({
-            variant: "destructive",
-            title: "Browser Not Supported",
-            description: "Your browser doesn't support speech recognition. Try Chrome or Firefox.",
-        });
-        return;
-    }
-
+  const handleToggleRecording = () => {
     if (isRecording) {
-      recognitionRef.current?.stop();
+      stopRecording();
     } else {
-       try {
-        // Request microphone permission
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        finalTranscriptRef.current = content; // Start with current text
-        recognitionRef.current?.start();
-        setIsRecording(true);
-      } catch (error) {
-        console.error('Error accessing microphone:', error);
-        toast({
-            variant: "destructive",
-            title: "Microphone Access Denied",
-            description: "Could not access the microphone. Please ensure you have granted permission.",
-        });
-      }
+      startRecording();
     }
   };
 
@@ -106,12 +127,11 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isRecording) {
-        recognitionRef.current?.stop();
+        stopRecording();
     }
     if (content.trim()) {
       onSendMessage(content);
       setContent('');
-      finalTranscriptRef.current = '';
     }
   };
 
@@ -136,7 +156,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
             disabled={isLoading} 
             className={cn(
                 "shrink-0 text-muted-foreground hover:text-foreground", 
-                isRecording && "text-primary hover:text-primary/90"
+                isRecording && "text-primary hover:text-primary/90 animate-pulse"
             )}
           >
             {isRecording ? <Square /> : <Mic />}
