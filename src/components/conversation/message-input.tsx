@@ -79,7 +79,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
       recognition.stop();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]);
+  }, [isRecording]);
 
 
   const handleToggleRecording = async () => {
