@@ -20,16 +20,18 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   
-  // Use a ref to hold the recognition object, ensuring it's stable across renders
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const initHasRun = useRef(false);
   
-  // This effect runs only once to initialize the speech recognition service
   useEffect(() => {
+    if (initHasRun.current) return;
     if (!SpeechRecognition) {
+      console.warn("SpeechRecognition not supported in this browser.");
       return;
     }
+    initHasRun.current = true;
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
@@ -38,31 +40,32 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
+    let final_transcript = '';
+
     recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
+      let interim_transcript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          final_transcript += event.results[i][0].transcript;
         } else {
-          interimTranscript += event.results[i][0].transcript;
+          interim_transcript += event.results[i][0].transcript;
         }
       }
-       // Append the new transcript to the existing content
-      setContent(prevContent => prevContent + finalTranscript + interimTranscript);
+      setContent(final_transcript + interim_transcript);
     };
 
-    // This is crucial for UI consistency.
+    recognition.onstart = () => {
+      final_transcript = content; // Start with current content if any
+      setIsRecording(true);
+    };
+
     recognition.onend = () => {
-      if (isRecording) {
-        setIsRecording(false);
-      }
+      setIsRecording(false);
     };
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
-      // 'aborted' can happen if stop() is called. 'no-speech' is a timeout.
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+       if (event.error !== 'no-speech' && event.error !== 'aborted') {
           toast({
               variant: "destructive",
               title: "Voice Error",
@@ -71,12 +74,6 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
       }
       setIsRecording(false);
     };
-
-    // Cleanup function to stop recognition if the component unmounts.
-    return () => {
-      recognition.stop();
-    };
-  // The empty dependency array ensures this effect runs only once.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,15 +90,10 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
 
     if (isRecording) {
       recognition.stop();
-      setIsRecording(false);
     } else {
       try {
-        // Request permission every time, as it can be revoked.
         await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Clear previous content when starting a new recording
-        setContent(''); 
         recognition.start();
-        setIsRecording(true);
       } catch (err: any) {
         let description = "Could not access the microphone. Please ensure you have granted permission in your browser settings.";
         if (err.name === 'NotAllowedError') {
