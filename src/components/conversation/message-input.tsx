@@ -19,14 +19,15 @@ const SpeechRecognition =
 export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  
+  // Use a ref to hold the recognition object, ensuring it's stable across renders
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   
+  // This effect runs only once to initialize the speech recognition service
   useEffect(() => {
     if (!SpeechRecognition) {
-      // Do nothing if the browser doesn't support it. 
-      // The button click will handle showing a toast.
       return;
     }
 
@@ -37,10 +38,9 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    let finalTranscript = '';
-
     recognition.onresult = (event) => {
       let interimTranscript = '';
+      let finalTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
@@ -48,19 +48,20 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      setContent(finalTranscript + interimTranscript);
+       // Append the new transcript to the existing content
+      setContent(prevContent => prevContent + finalTranscript + interimTranscript);
     };
 
     // This is crucial for UI consistency.
     recognition.onend = () => {
-      setIsRecording(false);
-      finalTranscript = ''; // Reset transcript for the next session
+      if (isRecording) {
+        setIsRecording(false);
+      }
     };
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
-      // 'aborted' is common when the mic is stopped manually.
-      // 'no-speech' is when the user stops talking. We don't need to show errors for these.
+      // 'aborted' can happen if stop() is called. 'no-speech' is a timeout.
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
           toast({
               variant: "destructive",
@@ -75,35 +76,31 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     return () => {
       recognition.stop();
     };
-  }, [toast]);
+  // The empty dependency array ensures this effect runs only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleToggleRecording = useCallback(async () => {
-    if (!SpeechRecognition) {
-      toast({
-        variant: "destructive",
-        title: "Browser Not Supported",
-        description: "Your browser doesn't support speech recognition. Try Chrome or Safari.",
-      });
-      return;
-    }
-    
-    if (!recognitionRef.current) {
-        // This should not happen due to the useEffect, but as a safeguard:
+    const recognition = recognitionRef.current;
+    if (!recognition) {
         toast({
             variant: "destructive",
-            title: "Initialization Error",
-            description: "Speech recognition service is not available. Please refresh the page.",
+            title: "Browser Not Supported",
+            description: "Your browser doesn't support speech recognition. Try Chrome or Safari.",
         });
         return;
     }
 
     if (isRecording) {
-      recognitionRef.current.stop();
+      recognition.stop();
+      setIsRecording(false);
     } else {
       try {
-        // We always request permission just in case it was revoked.
+        // Request permission every time, as it can be revoked.
         await navigator.mediaDevices.getUserMedia({ audio: true });
-        recognitionRef.current.start();
+        // Clear previous content when starting a new recording
+        setContent(''); 
+        recognition.start();
         setIsRecording(true);
       } catch (err: any) {
         let description = "Could not access the microphone. Please ensure you have granted permission in your browser settings.";
@@ -123,8 +120,8 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (isRecording && recognitionRef.current) {
-        recognitionRef.current.stop();
+    if (isRecording) {
+      recognitionRef.current?.stop();
     }
     if (content.trim()) {
       onSendMessage(content);
