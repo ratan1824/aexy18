@@ -25,6 +25,9 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
   const { toast } = useToast();
   const initHasRun = useRef(false);
   
+  // Use a ref to hold the final transcript to avoid re-renders causing issues
+  const finalTranscriptRef = useRef('');
+
   useEffect(() => {
     if (initHasRun.current) return;
     if (!SpeechRecognition) {
@@ -40,22 +43,21 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    let final_transcript = '';
-
     recognition.onresult = (event) => {
       let interim_transcript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          final_transcript += event.results[i][0].transcript;
+          finalTranscriptRef.current += event.results[i][0].transcript;
         } else {
           interim_transcript += event.results[i][0].transcript;
         }
       }
-      setContent(final_transcript + interim_transcript);
+      setContent(finalTranscriptRef.current + interim_transcript);
     };
 
     recognition.onstart = () => {
-      final_transcript = content; // Start with current content if any
+      // When starting, sync the final transcript with any text typed manually
+      finalTranscriptRef.current = content;
       setIsRecording(true);
     };
 
@@ -118,6 +120,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     if (content.trim()) {
       onSendMessage(content);
       setContent('');
+      finalTranscriptRef.current = ''; // This is the fix: Reset the final transcript
     }
   };
 
